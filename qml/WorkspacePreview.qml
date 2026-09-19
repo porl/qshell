@@ -90,7 +90,7 @@ PanelWindow {
                 text: "Empty workspace"
                 color: preview.theme.overlay
                 font.family: preview.theme.fontFamily
-                font.pixelSize: 12
+                font.pixelSize: preview.theme.fontSizeSmall
             }
 
             Repeater {
@@ -148,7 +148,7 @@ PanelWindow {
                             text: modelData.title
                             color: preview.theme.text
                             font.family: preview.theme.fontFamily
-                            font.pixelSize: 10
+                            font.pixelSize: preview.theme.fontSizeTiny
                         }
                     }
 

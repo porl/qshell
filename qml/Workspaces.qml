@@ -104,7 +104,7 @@ Row {
                         // Label workspace 10 as "0" (there is no tenth digit).
                         text: modelData.id === 10 ? "0" : modelData.name
                         font.family: workspaces.theme.fontFamily
-                        font.pixelSize: hover.containsMouse || modelData.focused ? 15 : modelData.active ? 14 : 11
+                        font.pixelSize: hover.containsMouse || modelData.focused ? workspaces.theme.fontSize : workspaces.theme.fontSizeSmall
                         color: {
                             if (hover.containsMouse || modelData.focused)
                                 return workspaces.theme.accent;
@@ -147,7 +147,7 @@ Row {
                 text: "|"
                 color: workspaces.theme.overlay
                 font.family: workspaces.theme.fontFamily
-                font.pixelSize: 12
+                font.pixelSize: workspaces.theme.fontSizeSmall
             }
         }
     }

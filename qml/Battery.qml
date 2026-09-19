@@ -62,7 +62,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             color: battery.levelColor
             font.family: battery.theme.fontFamily
-            font.pixelSize: 12
+            font.pixelSize: battery.theme.fontSize
             text: battery.percent + "%"
         }
     }

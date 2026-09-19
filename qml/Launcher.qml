@@ -472,7 +472,7 @@ PanelWindow {
                     placeholderText: "Search applications…  (= run, > terminal, >> keep, ? files)"
                     placeholderTextColor: launcher.theme.overlay
                     font.family: launcher.theme.fontFamily
-                    font.pixelSize: 15
+                    font.pixelSize: launcher.theme.fontSize
                     leftPadding: 12
                     rightPadding: 12
                     selectByMouse: true
@@ -552,7 +552,7 @@ PanelWindow {
                                     elide: Text.ElideRight
                                     color: launcher.theme.text
                                     font.family: launcher.theme.fontFamily
-                                    font.pixelSize: 14
+                                    font.pixelSize: launcher.theme.fontSize
                                     text: launcher.title(modelData)
                                 }
 
@@ -562,7 +562,7 @@ PanelWindow {
                                     visible: text.length > 0
                                     color: launcher.theme.overlay
                                     font.family: launcher.theme.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: launcher.theme.fontSizeSmall
                                     text: launcher.subtitle(modelData)
                                 }
                             }

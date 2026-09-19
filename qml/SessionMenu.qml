@@ -129,7 +129,7 @@ PanelWindow {
                             text: label
                             color: index === menu.current && action !== "cancel" ? menu.theme.base : menu.theme.text
                             font.family: menu.theme.fontFamily
-                            font.pixelSize: 14
+                            font.pixelSize: menu.theme.fontSize
                         }
 
                         MouseArea {

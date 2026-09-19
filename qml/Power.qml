@@ -10,7 +10,7 @@ Text {
 
     color: hover.containsMouse ? theme.accent : theme.text
     font.family: theme.fontFamily
-    font.pixelSize: 14
+    font.pixelSize: theme.fontSize
     text: "󰐥"
 
     MouseArea {

@@ -28,7 +28,7 @@ Text {
 
     color: hover.containsMouse || popout.open ? theme.accent : theme.text
     font.family: theme.fontFamily
-    font.pixelSize: 12
+    font.pixelSize: theme.fontSize
     text: glyph + " " + (audio ? percent + "%" : "--")
 
     PwObjectTracker {

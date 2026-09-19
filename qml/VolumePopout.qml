@@ -185,7 +185,7 @@ PanelWindow {
 
         color: hover.containsMouse ? popout.theme.accent : popout.theme.text
         font.family: popout.theme.fontFamily
-        font.pixelSize: 16
+        font.pixelSize: popout.theme.fontSize
         text: muted ? offGlyph : onGlyph
 
         MouseArea {
@@ -224,7 +224,7 @@ PanelWindow {
                     text: "Output"
                     color: popout.theme.subtext
                     font.family: popout.theme.fontFamily
-                    font.pixelSize: 11
+                    font.pixelSize: popout.theme.fontSizeTiny
                 }
 
                 Row {
@@ -235,7 +235,7 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         color: popout.theme.text
                         font.family: popout.theme.fontFamily
-                        font.pixelSize: 16
+                        font.pixelSize: popout.theme.fontSize
                         text: popout.outputGlyph(popout.sink, popout.sinkAudio ? popout.sinkAudio.muted : false)
                     }
 
@@ -246,7 +246,7 @@ PanelWindow {
                         text: popout.deviceName(popout.sink)
                         color: popout.theme.text
                         font.family: popout.theme.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: popout.theme.fontSizeSmall
                     }
 
                     MuteButton {
@@ -283,7 +283,7 @@ PanelWindow {
                         horizontalAlignment: Text.AlignRight
                         color: popout.theme.text
                         font.family: popout.theme.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: popout.theme.fontSizeSmall
                         text: (popout.sinkAudio ? Math.round(popout.sinkAudio.volume * 100) : 0) + "%"
                     }
                 }
@@ -292,7 +292,7 @@ PanelWindow {
                     text: "Input"
                     color: popout.theme.subtext
                     font.family: popout.theme.fontFamily
-                    font.pixelSize: 11
+                    font.pixelSize: popout.theme.fontSizeTiny
                 }
 
                 Row {
@@ -303,7 +303,7 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         color: popout.theme.text
                         font.family: popout.theme.fontFamily
-                        font.pixelSize: 16
+                        font.pixelSize: popout.theme.fontSize
                         text: popout.sourceAudio && popout.sourceAudio.muted ? "\uf131" : "\uf130"
                     }
 
@@ -314,7 +314,7 @@ PanelWindow {
                         text: popout.deviceName(popout.source)
                         color: popout.theme.text
                         font.family: popout.theme.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: popout.theme.fontSizeSmall
                     }
 
                     MuteButton {
@@ -353,7 +353,7 @@ PanelWindow {
                         horizontalAlignment: Text.AlignRight
                         color: popout.theme.text
                         font.family: popout.theme.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: popout.theme.fontSizeSmall
                         text: (popout.sourceAudio ? Math.round(popout.sourceAudio.volume * 100) : 0) + "%"
                     }
                 }

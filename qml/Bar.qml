@@ -71,7 +71,7 @@ PanelWindow {
         anchors.centerIn: parent
         color: theme.text
         font.family: theme.fontFamily
-        font.pixelSize: 12
+        font.pixelSize: theme.fontSize
         text: Qt.formatDateTime(new Date(), "ddd d MMM  HH:mm")
 
         Timer {
