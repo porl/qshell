@@ -1,0 +1,17 @@
+[package]
+name = "qshell"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "A Quickshell desktop shell for Hyprland"
+repository = "https://github.com/porl/qshell"
+publish = false
+
+[dependencies]
+libc = "0.2"
+wayland-client = "0.31"
+wayland-protocols-hyprland = { version = "=1.1.0", features = ["client"] }
+
+[[bin]]
+name = "qshell"
+path = "src/main.rs"
