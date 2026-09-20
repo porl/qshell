@@ -56,6 +56,11 @@ compositor bindings.
   action buttons, images, markup bodies and click-to-invoke. Newest on top, on
   the focused monitor; up to `QSHELL_NOTIFICATION_LIMIT` (default 4) are shown
   and the excess is stacked behind the bottom card like a hand of cards.
+- `qml/Calendar.qml` — drop-down calendar from the clock: a month grid with
+  prev/next month and year navigation. Click a day to select it (the footer
+  shows the full date and how far away it is); click the selected day again, or
+  double-click, to open `QSHELL_CALENDAR` for that date (`{date}` in the
+  template is replaced with the ISO date). `QSHELL_WEEK_START` picks Mon/Sun.
 - `qml/Theme.qml` — shared colours and metrics.
 
 Layer surfaces use the `quickshell-*` namespace, so a Hyprland layer rule can
@@ -93,6 +98,14 @@ The terminal used by `>`, `>>` and terminal-based file handlers is
 falling back to `TERMINAL`, then `xdg-terminal-exec`; no emulator is assumed.
 The editor fallback is `QSHELL_EDITOR`, then `EDITOR`, then `VISUAL`, then
 `nvim`.
+
+## Calendar (TODO)
+
+The drop-down calendar is Phase 1+2 (grid + open-app). **Phase 3, not built: an
+agenda for the selected day.** Intended shape — a configurable command
+(`QSHELL_CALENDAR_AGENDA`, e.g. `khal list {start} {end}` or `gcalcli agenda …`)
+whose output is rendered under the grid, rather than parsing `.ics`/`RRULE` in
+QML. No agenda section unless the command is configured.
 
 ## Command socket
 

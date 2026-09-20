@@ -159,7 +159,7 @@ PanelWindow {
                         radius: root.theme.radius
                         color: root.theme.surface
                         border.width: 1
-                        border.color: root.theme.surfaceAlt
+                        border.color: root.theme.border
                         opacity: 0.6 - index * 0.15
                     }
                 }
@@ -173,7 +173,7 @@ PanelWindow {
                     radius: root.theme.radius
                     color: root.theme.surface
                     border.width: 1
-                    border.color: card.critical ? root.theme.danger : root.theme.surfaceAlt
+                    border.color: card.critical ? root.theme.danger : root.theme.border
 
                     MouseArea {
                         anchors.fill: parent

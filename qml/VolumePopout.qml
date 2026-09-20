@@ -228,7 +228,7 @@ PanelWindow {
         radius: popout.theme.radius
         color: popout.theme.surface
         border.width: 1
-        border.color: popout.theme.surfaceAlt
+        border.color: popout.theme.border
 
         Item {
             anchors.fill: parent

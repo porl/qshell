@@ -105,7 +105,7 @@ PanelWindow {
         radius: menu.theme.radius
         color: menu.theme.surface
         border.width: 1
-        border.color: menu.theme.surfaceAlt
+        border.color: menu.theme.border
         scale: menu.shown ? 1 : 0.92
         opacity: menu.shown ? 1 : 0
 

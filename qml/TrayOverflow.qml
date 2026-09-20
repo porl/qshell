@@ -41,7 +41,7 @@ PopupWindow {
         radius: overflow.theme.radius
         color: overflow.theme.surface
         border.width: 1
-        border.color: overflow.theme.surfaceAlt
+        border.color: overflow.theme.border
 
         Grid {
             id: grid

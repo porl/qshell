@@ -472,7 +472,7 @@ PanelWindow {
             radius: launcher.theme.radius
             color: launcher.theme.surface
             border.width: 1
-            border.color: launcher.theme.surfaceAlt
+            border.color: launcher.theme.border
             scale: launcher.shown ? 1 : 0.96
             opacity: launcher.shown ? 1 : 0
 
@@ -524,7 +524,7 @@ PanelWindow {
                         radius: launcher.theme.itemRadius
                         color: launcher.theme.base
                         border.width: 1
-                        border.color: field.activeFocus ? launcher.theme.accent : launcher.theme.surfaceAlt
+                        border.color: field.activeFocus ? launcher.theme.accent : launcher.theme.border
                     }
                     onTextChanged: launcher.recompute()
                     onAccepted: launcher.activate(launcher.current)

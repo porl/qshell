@@ -92,7 +92,7 @@ PopupWindow {
         radius: trayMenu.theme.radius
         color: trayMenu.theme.surface
         border.width: 1
-        border.color: trayMenu.theme.surfaceAlt
+        border.color: trayMenu.theme.border
 
         Row {
             id: menuRow

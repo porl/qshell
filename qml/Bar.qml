@@ -17,6 +17,9 @@ PanelWindow {
     // gaps), so the tray can cap itself without colliding with the clock.
     readonly property real rightFixedWidth: volume.implicitWidth + battery.implicitWidth + power.implicitWidth + rightCluster.spacing * 3
 
+    // The clock opens the drop-down calendar (click to pin, focus-loss closes).
+    property PopoutState clockPopout: PopoutState {}
+
     // On a PanelWindow these anchors are booleans meaning "attach to this screen
     // edge", not QML item anchors. exclusiveZone reserves the space so maximised
     // windows don't slide underneath.
@@ -93,13 +96,33 @@ PanelWindow {
         color: theme.text
         font.family: theme.fontFamily
         font.pixelSize: theme.fontSize
-        text: Qt.formatDateTime(new Date(), "ddd d MMM  HH:mm")
+        text: Qt.formatDateTime(new Date(), "ddd yyyy-MM-dd HH:mm:ss")
 
         Timer {
             interval: 1000
             running: true
             repeat: true
-            onTriggered: clock.text = Qt.formatDateTime(new Date(), "ddd d MMM  HH:mm")
+            onTriggered: clock.text = Qt.formatDateTime(new Date(), "ddd yyyy-MM-dd HH:mm:ss")
         }
+
+        MouseArea {
+            anchors.fill: parent
+            anchors.margins: -6
+            hoverEnabled: true
+            onClicked: bar.clockPopout.open ? bar.clockPopout.close() : bar.clockPopout.activate()
+        }
+    }
+
+    Calendar {
+        theme: bar.theme
+        // Clock centre in bar (screen) coordinates; the clock is centred, so
+        // this is the screen centre. `mapToItem(null, …)` returns 0 for these
+        // layer surfaces, hence the direct arithmetic.
+        anchorX: clock.x + clock.width / 2
+        open: bar.clockPopout.open
+        pinned: bar.clockPopout.pinned
+        onHoveredChanged: hovered ? bar.clockPopout.contentEntered() : bar.clockPopout.contentExited()
+        onFocusLost: bar.clockPopout.focusLost()
+        onDismissRequested: bar.clockPopout.close()
     }
 }

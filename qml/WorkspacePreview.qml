@@ -73,7 +73,7 @@ PanelWindow {
         radius: preview.theme.radius
         color: preview.theme.surface
         border.width: 1
-        border.color: preview.theme.surfaceAlt
+        border.color: preview.theme.border
 
         MouseArea {
             id: bgArea
@@ -122,7 +122,7 @@ PanelWindow {
                         color: "transparent"
                         contentUnderBorder: true
                         border.width: itemMouse.containsMouse ? 3 : modelData.activated ? 2 : 1
-                        border.color: itemMouse.containsMouse || modelData.activated ? preview.theme.accent : preview.theme.surfaceAlt
+                        border.color: itemMouse.containsMouse || modelData.activated ? preview.theme.accent : preview.theme.border
 
                         ScreencopyView {
                             anchors.fill: parent
