@@ -24,4 +24,7 @@ QtObject {
     readonly property int fontSize: 16
     readonly property int fontSizeSmall: 14
     readonly property int fontSizeTiny: 12
+    // Tray/status icon size. Larger than the text base so icons read at a
+    // glance; both the bar and the overflow grid use it so they stay matched.
+    readonly property int trayIconSize: 20
 }

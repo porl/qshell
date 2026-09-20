@@ -30,16 +30,28 @@ compositor bindings.
   block opens after a delay and fades when the pointer leaves; clicking (or
   scrolling) opens immediately and pins the popout until focus is lost. The
   workspace preview deliberately doesn't use it (it closes on mouse-out).
-- `qml/Tray.qml` — system tray: as many StatusNotifierItem icons as fit before
-  the clock, with an expander (`»`) that opens a grid of the rest.
-- `qml/TrayItem.qml` — one tray icon. Left click runs the primary action (or
-  opens the menu for menu-only items), middle click the secondary action, right
-  click the menu, scroll is forwarded. A menu follows the shared popout rules.
+- `qml/Tray.qml` — system tray: at most `maxVisible` (default 6, or
+  `QSHELL_TRAY_MAX_VISIBLE`) StatusNotifierItem icons, further limited by the
+  space before the clock. Past that, the rest collapse behind an expander after
+  the icons; clicking its `»` (slightly smaller than the icons, colouring on
+  hover) opens a pinned grid below.
+- `qml/TrayItem.qml` — one tray icon. Hover shows the item's title (and
+  description) as a tooltip; left click runs the primary action (or opens the
+  menu for menu-only items), middle click the secondary action, right click the
+  menu. Scroll is forwarded, and does not open the menu. An open menu pins until
+  focus is lost. A missing or undecodable icon falls back to a square with the
+  item's initial.
+- `qml/Tooltip.qml` — the hover tooltip card, anchored as a popup so it works
+  both on the bar and inside the overflow grid. Never grabs focus or presses.
 - `qml/TrayMenu.qml` / `qml/MenuColumn.qml` / `qml/MenuRow.qml` — the themed
   D-Bus menu popup and its rows, including check/radio state, separators and
   cascading submenus (drawn as extra columns in the same window, since QML
   forbids a component nesting itself).
-- `qml/TrayOverflow.qml` — the expander's grid of tray icons that did not fit.
+- `qml/TrayOverflow.qml` — the expander's grid of tray icons that did not fit,
+  opened by clicking the expander and pinned with a focus grab (which is what
+  lets its icons receive pointer events), laid out square-ish (2-4 columns) and
+  showing only one of its icons' menus at a time. Icons use the same tooltips as
+  the bar.
 - `qml/Battery.qml` — battery level (hidden when the machine has none).
 - `qml/Power.qml` — power button that opens the session menu.
 - `qml/WorkspacePreview.qml` — hover a workspace to drop a card showing its
@@ -61,7 +73,8 @@ compositor bindings.
   selected day again, or double-click, to open `QSHELL_CALENDAR` for that date
   (`{date}` in the template is replaced with the ISO date). `QSHELL_WEEK_START`
   picks Mon/Sun.
-- `qml/Theme.qml` — shared colours and metrics.
+- `qml/Theme.qml` — shared colours and metrics (including `trayIconSize`, used
+  by both the bar and the overflow grid so tray icons match).
 
 Layer surfaces use the `quickshell-*` namespace, so a Hyprland layer rule can
 blur them. The bar reserves its height (`exclusiveZone`); the toggled overlays
@@ -133,6 +146,20 @@ Run the working tree in the current session:
 nix develop
 ./scripts/dev-session.sh
 ```
+
+## Testing
+
+`scripts/fake-tray-items.py` is a **test-only** helper (not used by the bridge
+or the Nix build): it registers N fake StatusNotifierItems over D-Bus so the
+tray's overflow expander and grid can be exercised without installing more
+apps. It needs system `python3` with `dbus-python` and `PyGObject` (GLib):
+
+```
+python3 scripts/fake-tray-items.py 30   # register 30; ^C to remove
+```
+
+To force the overflow path without that many items, lower the cap:
+`QSHELL_TRAY_MAX_VISIBLE=2` on the qshell unit.
 
 ## License
 

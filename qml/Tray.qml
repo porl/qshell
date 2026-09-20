@@ -1,9 +1,9 @@
 // System tray block for the bar.
 //
-// Shows as many StatusNotifierItems as fit in `maxWidth`; the rest collapse
-// behind an expander whose popup is a grid of the hidden icons. Every icon —
-// on the bar or in the grid — uses TrayItem, so menu/mouse behaviour is
-// identical in both places.
+// Shows at most `maxVisible` StatusNotifierItems; the rest collapse behind an
+// expander whose popup is a grid of the hidden icons. The expander follows the
+// icons (on the right). Every icon — on the bar or in the grid — uses TrayItem,
+// so menu/mouse behaviour is identical in both places.
 import Quickshell
 import Quickshell.Services.SystemTray
 import QtQuick
@@ -16,19 +16,28 @@ Item {
     // fixed right-hand blocks (see Bar.qml).
     property real maxWidth: 0
 
-    readonly property int iconSize: theme.fontSize
+    readonly property int iconSize: theme.trayIconSize
     readonly property int cellWidth: iconSize + 10
     readonly property int cellHeight: iconSize + 10
     readonly property int spacing: 4
     readonly property int stride: cellWidth + spacing
 
+    // Never fill the bar with tray icons; past this many the rest collapse.
+    // Overridable for testing overflow: QSHELL_TRAY_MAX_VISIBLE=3.
+    readonly property int maxVisible: {
+        var v = parseInt(Quickshell.env("QSHELL_TRAY_MAX_VISIBLE"));
+        return isNaN(v) || v < 1 ? 6 : v;
+    }
+
     readonly property var items: SystemTray.items.values
     readonly property int count: items.length
 
-    // One cell per icon, plus one for the expander when they do not all fit.
-    readonly property int capacity: Math.max(0, Math.floor((maxWidth + spacing) / stride))
-    readonly property bool overflow: count > capacity
-    readonly property int visibleCount: overflow ? Math.max(0, capacity - 1) : count
+    // Icons we are willing to show: our own cap, further limited by the space
+    // the bar can actually spare before the centred clock.
+    readonly property int spaceCells: Math.max(0, Math.floor((maxWidth + spacing) / stride))
+    readonly property int limit: Math.min(spaceCells, maxVisible)
+    readonly property bool overflow: count > limit
+    readonly property int visibleCount: overflow ? Math.max(0, limit - 1) : count
     readonly property var visibleItems: items.slice(0, visibleCount)
     readonly property var hiddenItems: overflow ? items.slice(visibleCount, count) : []
     readonly property int shownCells: visibleCount + (overflow ? 1 : 0)
@@ -67,6 +76,8 @@ Item {
             }
         }
 
+        // Rightmost, after the icons: the affordance for the hidden ones. It
+        // changes colour on hover, like the other bar blocks — no background.
         Item {
             id: expander
 
@@ -87,17 +98,12 @@ Item {
                 }
             }
 
-            Rectangle {
-                anchors.fill: parent
-                radius: tray.theme.itemRadius
-                color: hover.containsMouse || expander.popout.open ? tray.theme.surfaceAlt : "transparent"
-            }
-
             Text {
                 anchors.centerIn: parent
                 color: hover.containsMouse || expander.popout.open ? tray.theme.accent : tray.theme.text
                 font.family: tray.theme.fontFamily
-                font.pixelSize: tray.theme.fontSizeSmall
+                // Slightly smaller than the icons.
+                font.pixelSize: tray.theme.trayIconSize - 2
                 text: "»"
             }
 
@@ -107,8 +113,11 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
 
-                onContainsMouseChanged: containsMouse ? expander.popout.anchorEntered() : expander.popout.anchorExited()
-                onClicked: expander.popout.hoverActivate()
+                // Click-only: unlike the bar icons, the panel is pinned and
+                // takes a focus grab (see TrayOverflow), which is what lets the
+                // icons inside it receive pointer events. Hovering the chevron
+                // only changes its colour.
+                onClicked: expander.popout.open ? expander.popout.close() : expander.popout.activate()
             }
 
             TrayOverflow {
@@ -116,8 +125,8 @@ Item {
                 items: tray.hiddenItems
                 open: expander.popout.open
 
-                anchor.item: expander
-                onHoveredChanged: hovered ? expander.popout.contentEntered() : expander.popout.contentExited()
+                anchor.item: tray
+                onFocusLost: expander.popout.close()
                 onActivated: expander.popout.close()
             }
         }
