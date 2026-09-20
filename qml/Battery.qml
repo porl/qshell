@@ -1,6 +1,5 @@
-// Battery block: a small drawn indicator + percentage from UPower. Hidden on
-// machines without a battery (e.g. the test VM). Drawn rather than using an
-// icon so it does not depend on an icon theme being installed.
+// Battery block: level from UPower, drawn with the hand-drawn Glyph set plus
+// percent. A charging bolt sits beside the battery. Hidden with no battery.
 import Quickshell
 import Quickshell.Services.UPower
 import QtQuick
@@ -14,7 +13,7 @@ Item {
     readonly property bool present: device !== null && device.isLaptopBattery
     readonly property int percent: device ? Math.round(device.percentage * 100) : 0
     readonly property bool charging: device !== null && [UPowerDeviceState.Charging, UPowerDeviceState.FullyCharged, UPowerDeviceState.PendingCharge].includes(device.state)
-    readonly property color levelColor: charging ? theme.accent : percent <= 20 ? theme.danger : theme.text
+    readonly property color levelColor: percent <= 20 ? theme.danger : theme.text
 
     visible: present
     implicitWidth: row.implicitWidth
@@ -23,47 +22,36 @@ Item {
         id: row
 
         anchors.centerIn: parent
-        spacing: 4
+        spacing: 6
 
-        Item {
-            width: 20
-            height: 12
+        Row {
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 1
 
-            Rectangle {
-                width: 17
-                height: 12
-                radius: 3
-                color: "transparent"
-                border.width: 1
-                border.color: battery.theme.text
-            }
-
-            Rectangle {
-                x: 2
-                y: 2
-                width: Math.max(0, 13 * battery.percent / 100)
-                height: 8
-                radius: 1
+            Glyph {
+                anchors.verticalCenter: parent.verticalCenter
+                theme: battery.theme
+                name: "battery"
+                level: battery.percent / 100
                 color: battery.levelColor
             }
 
-            Rectangle {
-                x: 17.5
-                y: 3.5
-                width: 2.5
-                height: 5
-                radius: 1
-                color: battery.theme.text
+            Glyph {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: battery.charging
+                theme: battery.theme
+                name: "flash"
+                size: battery.theme.fontSizeSmall
+                color: battery.levelColor
             }
         }
 
         Text {
-            height: 12
-            verticalAlignment: Text.AlignVCenter
+            anchors.verticalCenter: parent.verticalCenter
+            text: battery.percent + "%"
             color: battery.levelColor
             font.family: battery.theme.fontFamily
             font.pixelSize: battery.theme.fontSize
-            text: battery.percent + "%"
         }
     }
 }

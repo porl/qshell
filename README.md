@@ -16,8 +16,9 @@ compositor bindings.
 
 ## Contents
 
-- `qml/Bar.qml` — top bar (workspaces, tray, clock) as a layer-shell surface.
-  Block hit areas extend to the screen edges, so the corners are not dead zones.
+- `qml/Bar.qml` — top bar (workspaces, media, tray, network, bluetooth,
+  brightness, volume, battery, power, clock) as a layer-shell surface. Block hit
+  areas extend to the screen edges, so the corners are not dead zones.
 - `qml/Workspaces.qml` — per-monitor workspace indicator (click to activate),
   driven by Quickshell's Hyprland integration.
 - `qml/Volume.qml` — default-sink volume/mute. Opens the audio popout on hover
@@ -52,8 +53,28 @@ compositor bindings.
   lets its icons receive pointer events), laid out square-ish (2-4 columns) and
   showing only one of its icons' menus at a time. Icons use the same tooltips as
   the bar.
-- `qml/Battery.qml` — battery level (hidden when the machine has none).
+- `qml/Battery.qml` — battery level (glyph + percent, charging bolt; hidden when
+  the machine has none).
+- `qml/NetworkBlock.qml` / `qml/NetworkPopout.qml` — network status and a popout:
+  wifi on/off toggle, wired link, the network list (signal shown as percent),
+  hover-revealed connect/disconnect actions, and a configurable manager launcher
+  (`QSHELL_NETWORK_MANAGER`, default `nm-connection-editor`). Scans only while
+  open.
+- `qml/BluetoothBlock.qml` / `qml/BluetoothPopout.qml` — Bluetooth status and a
+  popout: adapter toggle, Scan/Stop, and the device list with hover-revealed
+  connect/disconnect/pair actions (right-click forgets).
+- `qml/BrightnessBlock.qml` / `qml/BrightnessPopout.qml` — backlight via
+  `brightnessctl` (hidden with no backlight) and a slider popout; the popout also
+  shows the UPower power-profile switcher when `powerprofilesctl` works.
+- `qml/Media.qml` — MPRIS now-playing: expands to artist – title on a track
+  change then collapses to the play/pause icon; left/middle/right click
+  toggle/previous/next; hover shows the full title.
 - `qml/Power.qml` — power button that opens the session menu.
+- `qml/Glyph.qml` — the hand-drawn icon set (Canvas) used everywhere in the bar
+  and the tray popouts, so the icons match the bar text instead of an icon font.
+  `name` selects the shape; `level` drives wifi strength, volume and battery fill.
+- `qml/Toggle.qml` — the small on/off switch used by the network and bluetooth
+  popouts.
 - `qml/WorkspacePreview.qml` — hover a workspace to drop a card showing its
   windows as live captures at their Hyprland geometry (so overlapping and
   hidden windows are visible); clicking a window focuses it, switching

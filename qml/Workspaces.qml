@@ -120,7 +120,7 @@ Row {
                         // Label workspace 10 as "0" (there is no tenth digit).
                         text: modelData.id === 10 ? "0" : modelData.name
                         font.family: workspaces.theme.fontFamily
-                        font.pixelSize: hover.containsMouse || modelData.focused ? workspaces.theme.fontSize : workspaces.theme.fontSizeSmall
+                        font.pixelSize: workspaces.theme.fontSize
                         color: {
                             if (hover.containsMouse || modelData.focused)
                                 return workspaces.theme.accent;

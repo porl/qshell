@@ -40,13 +40,13 @@ PanelWindow {
 
     function outputGlyph(node, muted): string {
         if (!node)
-            return "󰝟";
+            return "volume-mute";
         if (isHeadphones(node))
-            return "\uf025";
+            return "headphones";
         if (muted)
-            return "󰝟";
+            return "volume-mute";
         var volume = node.audio ? node.audio.volume : 0;
-        return volume <= 0.33 ? "󰕿" : volume <= 0.66 ? "󰖀" : "󰕾";
+        return volume <= 0.5 ? "volume-low" : "volume";
     }
 
     // Level meter colour: Catppuccin green -> yellow -> red, so a meter reads
@@ -200,18 +200,17 @@ PanelWindow {
         }
     }
 
-    component MuteButton: Text {
+    component MuteButton: Glyph {
         id: mute
 
+        theme: popout.theme
         property bool muted
-        property string onGlyph: "󰕾"
-        property string offGlyph: "󰝟"
+        property string onName: "volume"
+        property string offName: "volume-mute"
         signal toggled()
 
         color: hover.containsMouse ? popout.theme.accent : popout.theme.text
-        font.family: popout.theme.fontFamily
-        font.pixelSize: popout.theme.fontSize
-        text: muted ? offGlyph : onGlyph
+        name: muted ? offName : onName
 
         MouseArea {
             id: hover
@@ -256,12 +255,11 @@ PanelWindow {
                     width: parent.width
                     spacing: 8
 
-                    Text {
+                    Glyph {
                         anchors.verticalCenter: parent.verticalCenter
+                        theme: popout.theme
+                        name: popout.outputGlyph(popout.sink, popout.sinkAudio ? popout.sinkAudio.muted : false)
                         color: popout.theme.text
-                        font.family: popout.theme.fontFamily
-                        font.pixelSize: popout.theme.fontSize
-                        text: popout.outputGlyph(popout.sink, popout.sinkAudio ? popout.sinkAudio.muted : false)
                     }
 
                     Text {
@@ -324,12 +322,11 @@ PanelWindow {
                     width: parent.width
                     spacing: 8
 
-                    Text {
+                    Glyph {
                         anchors.verticalCenter: parent.verticalCenter
+                        theme: popout.theme
+                        name: popout.sourceAudio && popout.sourceAudio.muted ? "mic-off" : "mic"
                         color: popout.theme.text
-                        font.family: popout.theme.fontFamily
-                        font.pixelSize: popout.theme.fontSize
-                        text: popout.sourceAudio && popout.sourceAudio.muted ? "\uf131" : "\uf130"
                     }
 
                     Text {
@@ -345,8 +342,8 @@ PanelWindow {
                     MuteButton {
                         id: muteIn
 
-                        onGlyph: "\uf130"
-                        offGlyph: "\uf131"
+                        onName: "mic"
+                        offName: "mic-off"
                         muted: popout.sourceAudio ? popout.sourceAudio.muted : false
                         onToggled: if (popout.sourceAudio)
                             popout.sourceAudio.muted = !popout.sourceAudio.muted

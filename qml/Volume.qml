@@ -1,11 +1,11 @@
-// Volume block: shows the default sink's mute state and level. Click toggles
-// mute, scroll adjusts the level. Bound through Quickshell's PipeWire service
-// (tracked so updates arrive without polling).
+// Volume block: shows the default sink's mute state and level. Click opens the
+// audio popout on hover (short delay) or immediately on click/scroll; middle
+// click mutes, scroll adjusts the level.
 import Quickshell
 import Quickshell.Services.Pipewire
 import QtQuick
 
-Text {
+Item {
     id: volume
 
     required property Theme theme
@@ -14,22 +14,36 @@ Text {
     readonly property var audio: sink && sink.audio ? sink.audio : null
     readonly property bool muted: audio ? audio.muted : false
     readonly property int percent: audio ? Math.round(audio.volume * 100) : 0
-    readonly property string glyph: {
-        if (!audio || muted || percent === 0)
-            return "󰝟";
-        if (percent <= 33)
-            return "󰕿";
-        if (percent <= 66)
-            return "󰖀";
-        return "󰕾";
-    }
-
+    readonly property bool silent: !audio || muted || percent === 0
+    readonly property string glyphName: silent ? "volume-mute" : percent <= 50 ? "volume-low" : "volume"
+    readonly property real glyphLevel: silent ? 0 : (percent <= 50 ? 0.5 : 1)
     property PopoutState popout: PopoutState {}
 
-    color: hover.containsMouse || popout.open ? theme.accent : theme.text
-    font.family: theme.fontFamily
-    font.pixelSize: theme.fontSize
-    text: glyph + " " + (audio ? percent + "%" : "--")
+    implicitWidth: row.implicitWidth
+    implicitHeight: row.implicitHeight
+
+    Row {
+        id: row
+
+        anchors.centerIn: parent
+        spacing: 6
+
+        Glyph {
+            anchors.verticalCenter: parent.verticalCenter
+            theme: volume.theme
+            name: volume.glyphName
+            level: volume.glyphLevel
+            color: hover.containsMouse || volume.popout.open ? volume.theme.accent : volume.theme.text
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            text: volume.audio ? volume.percent + "%" : "--"
+            color: hover.containsMouse || volume.popout.open ? volume.theme.accent : volume.theme.text
+            font.family: volume.theme.fontFamily
+            font.pixelSize: volume.theme.fontSize
+        }
+    }
 
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink]
@@ -41,6 +55,7 @@ Text {
         anchors.fill: parent
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+
         onContainsMouseChanged: containsMouse ? volume.popout.anchorEntered() : volume.popout.anchorExited()
         onClicked: mouse => {
             if (mouse.button === Qt.MiddleButton) {

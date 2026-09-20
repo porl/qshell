@@ -13,9 +13,9 @@ PanelWindow {
     // Forwarded from the power block; the shell root opens the session menu.
     signal powerRequested()
 
-    // Width of everything to the tray's right (volume, battery, power and their
-    // gaps), so the tray can cap itself without colliding with the clock.
-    readonly property real rightFixedWidth: volume.implicitWidth + battery.implicitWidth + power.implicitWidth + rightCluster.spacing * 3
+    // Width of everything to the tray's right, so the tray can cap itself
+    // without colliding with the clock.
+    readonly property real rightFixedWidth: media.implicitWidth + network.implicitWidth + bluetooth.implicitWidth + brightness.implicitWidth + volume.implicitWidth + battery.implicitWidth + power.implicitWidth + rightCluster.spacing * 7
 
     // The clock opens the drop-down calendar (click to pin, focus-loss closes).
     property PopoutState clockPopout: PopoutState {}
@@ -64,12 +64,40 @@ PanelWindow {
             maxWidth: Math.max(0, bar.width / 2 - clock.width / 2 - bar.rightFixedWidth - 8 - 16)
         }
 
+        // Now-playing, immediately right of the tray icons.
+        Media {
+            id: media
+
+            theme: bar.theme
+            height: bar.implicitHeight
+        }
+
+        NetworkBlock {
+            id: network
+
+            theme: bar.theme
+            height: bar.implicitHeight
+        }
+
+        BluetoothBlock {
+            id: bluetooth
+
+            theme: bar.theme
+            height: bar.implicitHeight
+        }
+
+        BrightnessBlock {
+            id: brightness
+
+            theme: bar.theme
+            height: bar.implicitHeight
+        }
+
         Volume {
             id: volume
 
             theme: bar.theme
             height: bar.implicitHeight
-            verticalAlignment: Text.AlignVCenter
         }
 
         Battery {
@@ -84,7 +112,6 @@ PanelWindow {
 
             theme: bar.theme
             height: bar.implicitHeight
-            verticalAlignment: Text.AlignVCenter
             onActivated: bar.powerRequested()
         }
     }
