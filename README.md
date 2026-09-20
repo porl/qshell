@@ -57,10 +57,10 @@ compositor bindings.
   the focused monitor; up to `QSHELL_NOTIFICATION_LIMIT` (default 4) are shown
   and the excess is stacked behind the bottom card like a hand of cards.
 - `qml/Calendar.qml` — drop-down calendar from the clock: a month grid with
-  prev/next month and year navigation. Click a day to select it (the footer
-  shows the full date and how far away it is); click the selected day again, or
-  double-click, to open `QSHELL_CALENDAR` for that date (`{date}` in the
-  template is replaced with the ISO date). `QSHELL_WEEK_START` picks Mon/Sun.
+  prev/next month and year navigation. Click a day to select it; click the
+  selected day again, or double-click, to open `QSHELL_CALENDAR` for that date
+  (`{date}` in the template is replaced with the ISO date). `QSHELL_WEEK_START`
+  picks Mon/Sun.
 - `qml/Theme.qml` — shared colours and metrics.
 
 Layer surfaces use the `quickshell-*` namespace, so a Hyprland layer rule can
