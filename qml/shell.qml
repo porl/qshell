@@ -15,9 +15,34 @@ ShellRoot {
     readonly property string controlSocket: Quickshell.env("QSHELL_SOCKET")
         || (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/qshell.sock"
 
-    Bar {
-        theme: shell.theme
-        onPowerRequested: sessionMenu.toggle()
+    // Which screens get a bar: `QSHELL_BAR_SCREENS` is "all" (default), a
+    // comma-separated list of output names, or "primary". Filtering happens in
+    // the delegate rather than in the model: `Variants` needs the
+    // `Quickshell.screens` property itself (a real list), and a JS array built
+    // in a binding arrives as a single value, which yields only one bar.
+    function barScreenEnabled(screen): bool {
+        var spec = (Quickshell.env("QSHELL_BAR_SCREENS") || "all").trim().toLowerCase();
+        if (spec === "" || spec === "all")
+            return true;
+        if (spec === "primary")
+            return Quickshell.screens.length > 0 && screen === Quickshell.screens[0];
+        var names = spec.split(",").map(function(n) {
+            return n.trim();
+        });
+        return names.indexOf(screen.name.toLowerCase()) >= 0;
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        delegate: Bar {
+            required property ShellScreen modelData
+
+            theme: shell.theme
+            screen: modelData
+            visible: shell.barScreenEnabled(modelData)
+            onPowerRequested: sessionMenu.toggle()
+        }
     }
 
     SessionMenu {
@@ -29,6 +54,10 @@ ShellRoot {
     Launcher {
         id: launcher
 
+        theme: shell.theme
+    }
+
+    Notifications {
         theme: shell.theme
     }
 

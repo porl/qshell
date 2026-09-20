@@ -18,6 +18,10 @@ PanelWindow {
     required property Theme theme
 
     visible: false
+    // Visual state: the launcher animates itself (backdrop fades, card scales)
+    // and Hyprland is told not to animate the surface (`no_anim`), so `visible`
+    // only maps/unmaps, a beat after the close animation.
+    property bool shown: false
     anchors {
         top: true
         left: true
@@ -61,18 +65,33 @@ PanelWindow {
         return terminal.length > 0 ? terminal.split(" ") : [];
     }
 
-    function toggle(): void {
-        visible = !visible;
-        if (visible) {
-            field.text = "";
-            recompute();
-            scope.forceActiveFocus();
-            field.forceActiveFocus();
-        }
+    Timer {
+        id: closeTimer
+
+        interval: 170
+        onTriggered: launcher.visible = false
+    }
+
+    function open(): void {
+        closeTimer.stop();
+        visible = true;
+        shown = true;
+        field.text = "";
+        recompute();
+        scope.forceActiveFocus();
+        field.forceActiveFocus();
     }
 
     function close(): void {
-        visible = false;
+        shown = false;
+        closeTimer.restart();
+    }
+
+    function toggle(): void {
+        if (shown)
+            close();
+        else
+            open();
     }
 
     function move(delta: int): void {
@@ -421,6 +440,14 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         color: launcher.theme.backdrop
+        opacity: launcher.shown ? 1 : 0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutQuad
+            }
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -446,6 +473,23 @@ PanelWindow {
             color: launcher.theme.surface
             border.width: 1
             border.color: launcher.theme.surfaceAlt
+            scale: launcher.shown ? 1 : 0.96
+            opacity: launcher.shown ? 1 : 0
+
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 150
+                    easing.type: Easing.OutBack
+                    easing.overshoot: 1.1
+                }
+            }
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 120
+                    easing.type: Easing.OutQuad
+                }
+            }
 
             MouseArea {
                 anchors.fill: parent

@@ -10,6 +10,9 @@ Row {
     id: workspaces
 
     required property Theme theme
+    // The screen this bar is on. When set (one bar per monitor), only that
+    // monitor's workspaces are shown; otherwise all monitors are.
+    property var screen: null
 
     // Shared with WorkspacePreview: the workspace under the pointer and the x
     // (screen coordinates) of the bar item it belongs to.
@@ -21,9 +24,17 @@ Row {
 
     spacing: 2
 
-    readonly property var sortedMonitors: Hyprland.monitors.values
-        .slice()
-        .sort((a, b) => a.y !== b.y ? a.y - b.y : a.x !== b.x ? a.x - b.x : a.id - b.id)
+    readonly property var sortedMonitors: {
+        var monitors = Hyprland.monitors.values
+            .slice()
+            .sort((a, b) => a.y !== b.y ? a.y - b.y : a.x !== b.x ? a.x - b.x : a.id - b.id);
+        if (screen) {
+            var matching = monitors.filter(m => m.name === screen.name);
+            if (matching.length > 0)
+                return matching;
+        }
+        return monitors;
+    }
 
     function workspacesFor(monitor): var {
         return Hyprland.workspaces.values
@@ -32,6 +43,11 @@ Row {
     }
 
     function showPreview(workspace, anchor): void {
+        // No card for an empty workspace.
+        if (!workspace || workspace.toplevels.values.length === 0) {
+            previewOpen = false;
+            return;
+        }
         hoveredWorkspace = workspace;
         previewAnchorX = anchor;
         previewOpen = true;

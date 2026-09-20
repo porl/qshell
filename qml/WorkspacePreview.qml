@@ -5,6 +5,7 @@
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
+import Quickshell.Widgets
 import QtQuick
 
 PanelWindow {
@@ -24,8 +25,14 @@ PanelWindow {
     readonly property int padding: 8
     readonly property int canvasWidth: 480
     readonly property var monitor: workspace ? workspace.monitor : null
-    readonly property real scale: monitor && monitor.width > 0 ? canvasWidth / monitor.width : 1
-    readonly property int canvasHeight: monitor && monitor.width > 0 ? Math.round(monitor.height * scale) : 270
+    // Hyprland reports monitor width/height in physical pixels but window
+    // geometry in logical pixels, so divide by the monitor scale before
+    // deriving the canvas scale (otherwise a scaled display halves everything).
+    readonly property real monitorScale: monitor && monitor.scale > 0 ? monitor.scale : 1
+    readonly property real logicalWidth: monitor ? monitor.width / monitorScale : 0
+    readonly property real logicalHeight: monitor ? monitor.height / monitorScale : 0
+    readonly property real scale: logicalWidth > 0 ? canvasWidth / logicalWidth : 1
+    readonly property int canvasHeight: logicalWidth > 0 ? Math.round(logicalHeight * scale) : 270
     readonly property var toplevels: workspace ? workspace.toplevels.values : []
     // Hover is tracked from the card background and every thumbnail, since one
     // overlay would swallow the thumbnails' own hover.
@@ -107,48 +114,52 @@ PanelWindow {
                     width: info.size ? Math.max(8, info.size[0] * preview.scale) : 0
                     height: info.size ? Math.max(8, info.size[1] * preview.scale) : 0
 
-                    ScreencopyView {
+                    // ClippingRectangle rounds the capture and keeps the border
+                    // inside the thumbnail (so it is not clipped at the bottom).
+                    ClippingRectangle {
                         anchors.fill: parent
-                        captureSource: preview.visible ? modelData.wayland : null
-                        live: true
-                    }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        color: preview.theme.accent
-                        opacity: itemMouse.containsMouse ? 0.15 : 0
-                    }
-
-                    Rectangle {
-                        anchors.fill: parent
+                        radius: 3
                         color: "transparent"
+                        contentUnderBorder: true
                         border.width: itemMouse.containsMouse ? 3 : modelData.activated ? 2 : 1
                         border.color: itemMouse.containsMouse || modelData.activated ? preview.theme.accent : preview.theme.surfaceAlt
-                    }
 
-                    Rectangle {
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            bottom: parent.bottom
+                        ScreencopyView {
+                            anchors.fill: parent
+                            captureSource: preview.visible ? modelData.wayland : null
+                            live: true
                         }
-                        height: 18
-                        visible: itemMouse.containsMouse
-                        color: preview.theme.base
-                        opacity: 0.8
 
-                        Text {
+                        Rectangle {
+                            anchors.fill: parent
+                            color: preview.theme.accent
+                            opacity: itemMouse.containsMouse ? 0.15 : 0
+                        }
+
+                        Rectangle {
                             anchors {
-                                fill: parent
-                                leftMargin: 4
-                                rightMargin: 4
+                                left: parent.left
+                                right: parent.right
+                                bottom: parent.bottom
                             }
-                            verticalAlignment: Text.AlignVCenter
-                            elide: Text.ElideRight
-                            text: modelData.title
-                            color: preview.theme.text
-                            font.family: preview.theme.fontFamily
-                            font.pixelSize: preview.theme.fontSizeTiny
+                            height: 18
+                            visible: itemMouse.containsMouse
+                            color: preview.theme.base
+                            opacity: 0.8
+
+                            Text {
+                                anchors {
+                                    fill: parent
+                                    leftMargin: 4
+                                    rightMargin: 4
+                                }
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                                text: modelData.title
+                                color: preview.theme.text
+                                font.family: preview.theme.fontFamily
+                                font.pixelSize: preview.theme.fontSizeTiny
+                            }
                         }
                     }
 

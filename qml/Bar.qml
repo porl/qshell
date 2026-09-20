@@ -13,6 +13,10 @@ PanelWindow {
     // Forwarded from the power block; the shell root opens the session menu.
     signal powerRequested()
 
+    // Width of everything to the tray's right (volume, battery, power and their
+    // gaps), so the tray can cap itself without colliding with the clock.
+    readonly property real rightFixedWidth: volume.implicitWidth + battery.implicitWidth + power.implicitWidth + rightCluster.spacing * 3
+
     // On a PanelWindow these anchors are booleans meaning "attach to this screen
     // edge", not QML item anchors. exclusiveZone reserves the space so maximised
     // windows don't slide underneath.
@@ -30,6 +34,7 @@ PanelWindow {
         id: workspaces
 
         theme: bar.theme
+        screen: bar.screen
         height: bar.implicitHeight
         anchors {
             left: parent.left
@@ -38,6 +43,8 @@ PanelWindow {
     }
 
     Row {
+        id: rightCluster
+
         anchors {
             right: parent.right
             rightMargin: 8
@@ -46,18 +53,32 @@ PanelWindow {
         height: bar.implicitHeight
         spacing: 12
 
+        // Keep the tray clear of the centred clock. `bar.width` is the screen
+        // width; the clock is centred, so half its width plus a gap is reserved.
+        Tray {
+            theme: bar.theme
+            height: bar.implicitHeight
+            maxWidth: Math.max(0, bar.width / 2 - clock.width / 2 - bar.rightFixedWidth - 8 - 16)
+        }
+
         Volume {
+            id: volume
+
             theme: bar.theme
             height: bar.implicitHeight
             verticalAlignment: Text.AlignVCenter
         }
 
         Battery {
+            id: battery
+
             theme: bar.theme
             height: bar.implicitHeight
         }
 
         Power {
+            id: power
+
             theme: bar.theme
             height: bar.implicitHeight
             verticalAlignment: Text.AlignVCenter

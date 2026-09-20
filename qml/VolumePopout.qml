@@ -49,6 +49,22 @@ PanelWindow {
         return volume <= 0.33 ? "󰕿" : volume <= 0.66 ? "󰖀" : "󰕾";
     }
 
+    // Level meter colour: Catppuccin green -> yellow -> red, so a meter reads
+    // differently from the (blue) sliders. Green covers most of the range, then
+    // a short yellow band, then red only near the top.
+    function meterColor(level): color {
+        var t = Math.max(0, Math.min(1, level));
+        var green = Qt.rgba(0.651, 0.890, 0.631, 1);   // a6e3a1
+        var yellow = Qt.rgba(0.976, 0.886, 0.686, 1);  // f9e2af
+        var red = Qt.rgba(0.953, 0.545, 0.659, 1);     // f38ba8
+        if (t < 0.65)
+            return green;
+        var from = t < 0.9 ? green : yellow;
+        var to = t < 0.9 ? yellow : red;
+        var k = t < 0.9 ? (t - 0.65) / 0.25 : (t - 0.9) / 0.1;
+        return Qt.rgba(from.r + (to.r - from.r) * k, from.g + (to.g - from.g) * k, from.b + (to.b - from.b) * k, 1);
+    }
+
     visible: open
     implicitWidth: 320
     implicitHeight: layout.implicitHeight + 24
@@ -109,14 +125,23 @@ PanelWindow {
                 color: popout.theme.base
 
                 Rectangle {
-                    width: parent.width * Math.min(1, meter.monitor && meter.monitor.peaks ? meter.monitor.peaks[index] : 0)
+                    readonly property real level: Math.min(1, meter.monitor && meter.monitor.peaks ? meter.monitor.peaks[index] : 0)
+
+                    width: parent.width * level
                     height: parent.height
                     radius: 2
-                    color: popout.theme.accent
+                    color: popout.meterColor(level)
 
                     Behavior on width {
                         NumberAnimation {
                             duration: 100
+                            easing.type: Easing.OutQuad
+                        }
+                    }
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 120
                             easing.type: Easing.OutQuad
                         }
                     }

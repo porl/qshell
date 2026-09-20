@@ -1,8 +1,10 @@
 // Session menu: a full-screen overlay toggled by the qshell bridge.
 //
-// Hyprland blurs a layer surface by namespace, but the blur covers the whole
-// surface, so the overlay is mapped only while open (`visible`). That is also
-// what lets Hyprland play its layer animation on open and close.
+// The overlay animates itself in QML (the backdrop fades, the card scales), so
+// the compositor must not animate the layer surface too (`no_anim` in the
+// Hyprland layer rules) — that would scale the whole-surface blur as a
+// rectangle. `shown` drives the visuals; `visible` only maps/unmaps, a beat
+// after the close animation has finished.
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -13,6 +15,7 @@ PanelWindow {
     required property Theme theme
 
     visible: false
+    property bool shown: false
     anchors {
         top: true
         left: true
@@ -27,14 +30,34 @@ PanelWindow {
 
     property int current: 1
 
+    Timer {
+        id: closeTimer
+
+        interval: 170
+        onTriggered: menu.visible = false
+    }
+
+    function open(): void {
+        closeTimer.stop();
+        visible = true;
+        shown = true;
+        scope.forceActiveFocus();
+    }
+
+    function close(): void {
+        shown = false;
+        closeTimer.restart();
+    }
+
     function toggle(): void {
-        visible = !visible;
-        if (visible)
-            scope.forceActiveFocus();
+        if (shown)
+            close();
+        else
+            open();
     }
 
     function run(action: string): void {
-        visible = false;
+        close();
         if (action === "lock")
             Quickshell.execDetached(["hyprlock"]);
         else if (action === "logout")
@@ -58,10 +81,18 @@ PanelWindow {
     Rectangle {
         anchors.fill: parent
         color: menu.theme.backdrop
+        opacity: menu.shown ? 1 : 0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutQuad
+            }
+        }
 
         MouseArea {
             anchors.fill: parent
-            onClicked: menu.visible = false
+            onClicked: menu.close()
         }
     }
 
@@ -75,6 +106,23 @@ PanelWindow {
         color: menu.theme.surface
         border.width: 1
         border.color: menu.theme.surfaceAlt
+        scale: menu.shown ? 1 : 0.92
+        opacity: menu.shown ? 1 : 0
+
+        Behavior on scale {
+            NumberAnimation {
+                duration: 150
+                easing.type: Easing.OutBack
+                easing.overshoot: 1.1
+            }
+        }
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 120
+                easing.type: Easing.OutQuad
+            }
+        }
 
         MouseArea {
             anchors.fill: parent

@@ -16,8 +16,8 @@ compositor bindings.
 
 ## Contents
 
-- `qml/Bar.qml` — top bar (workspaces + clock) as a layer-shell surface. Block
-  hit areas extend to the screen edges, so the corners are not dead zones.
+- `qml/Bar.qml` — top bar (workspaces, tray, clock) as a layer-shell surface.
+  Block hit areas extend to the screen edges, so the corners are not dead zones.
 - `qml/Workspaces.qml` — per-monitor workspace indicator (click to activate),
   driven by Quickshell's Hyprland integration.
 - `qml/Volume.qml` — default-sink volume/mute. Opens the audio popout on hover
@@ -30,6 +30,16 @@ compositor bindings.
   block opens after a delay and fades when the pointer leaves; clicking (or
   scrolling) opens immediately and pins the popout until focus is lost. The
   workspace preview deliberately doesn't use it (it closes on mouse-out).
+- `qml/Tray.qml` — system tray: as many StatusNotifierItem icons as fit before
+  the clock, with an expander (`»`) that opens a grid of the rest.
+- `qml/TrayItem.qml` — one tray icon. Left click runs the primary action (or
+  opens the menu for menu-only items), middle click the secondary action, right
+  click the menu, scroll is forwarded. A menu follows the shared popout rules.
+- `qml/TrayMenu.qml` / `qml/MenuColumn.qml` / `qml/MenuRow.qml` — the themed
+  D-Bus menu popup and its rows, including check/radio state, separators and
+  cascading submenus (drawn as extra columns in the same window, since QML
+  forbids a component nesting itself).
+- `qml/TrayOverflow.qml` — the expander's grid of tray icons that did not fit.
 - `qml/Battery.qml` — battery level (hidden when the machine has none).
 - `qml/Power.qml` — power button that opens the session menu.
 - `qml/WorkspacePreview.qml` — hover a workspace to drop a card showing its
@@ -40,6 +50,12 @@ compositor bindings.
 - `qml/Launcher.qml` — application launcher: desktop entries, subsequence
   filtering over name/generic name/keywords/comment, launch-frequency ranking,
   and a `>`/`=` run mode.
+- `qml/Notifications.qml` — desktop notifications: a `NotificationServer` (so
+  qshell owns `org.freedesktop.Notifications`) with themed popups that
+  auto-dismiss unless hovered (countdown ring; critical never auto-clears),
+  action buttons, images, markup bodies and click-to-invoke. Newest on top, on
+  the focused monitor; up to `QSHELL_NOTIFICATION_LIMIT` (default 4) are shown
+  and the excess is stacked behind the bottom card like a hand of cards.
 - `qml/Theme.qml` — shared colours and metrics.
 
 Layer surfaces use the `quickshell-*` namespace, so a Hyprland layer rule can
