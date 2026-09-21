@@ -81,8 +81,8 @@ compositor bindings.
   workspace if needed.
 - `qml/SessionMenu.qml` — lock / log out / restart / shut down overlay.
 - `qml/Launcher.qml` — application launcher: desktop entries, subsequence
-  filtering over name/generic name/keywords/comment, launch-frequency ranking,
-  and a `>`/`=` run mode.
+  filtering over name/generic name/keywords/comment, match-quality and
+  launch-frequency ranking, and a `>`/`=` run mode.
 - `qml/Notifications.qml` — desktop notifications: a `NotificationServer` (so
   qshell owns `org.freedesktop.Notifications`) with themed popups that
   auto-dismiss unless hovered (countdown ring; critical never auto-clears),
@@ -124,8 +124,10 @@ mime-type icon; selecting one opens it with the default handler, falling back to
 the editor in a terminal when nothing handles it (e.g. a handler that needs a
 terminal). Applications launch through `uwsm app -- …`, so they become systemd
 user units. Per-application launch counts and last-used times are stored in
-`$XDG_STATE_HOME/quickshell/launcher.json` and rank the results (frequency, then
-recency, then match score).
+`$XDG_STATE_HOME/quickshell/launcher.json` and rank the results within a
+match-quality tier: a query that names an application exactly (or matches one of
+its words) always outranks a looser match, but within a tier frequency, then
+recency, then match score decide.
 
 The terminal used by `>`, `>>` and terminal-based file handlers is
 `QSHELL_TERMINAL` — a command prefix, e.g. `foot -e` or `xdg-terminal-exec`,

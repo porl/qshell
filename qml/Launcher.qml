@@ -1,7 +1,8 @@
 // Application launcher: a layer-shell overlay toggled by the qshell bridge.
 //
-// A plain query lists desktop entries (subsequence match, ranked by launch
-// frequency then recency then score; state in
+// A plain query lists desktop entries (subsequence match, ranked by match
+// quality — exact name/word over prefix over fuzzy — then launch frequency,
+// then recency, then score; state in
 // `$XDG_STATE_HOME/quickshell/launcher.json`) followed by "run" entries for the
 // whole line: `=` raw, `>` in a terminal, `>>` in a terminal kept open. `?`
 // searches files under `$HOME` (mime icons; opened with the default handler,
@@ -192,6 +193,7 @@ PanelWindow {
                 kind: "app",
                 entry: entry,
                 score: score,
+                rank: matchRank(needle, entry),
                 count: record ? record.count : 0,
                 last: record ? record.last : 0,
             });
@@ -263,6 +265,8 @@ PanelWindow {
     }
 
     function byRank(a, b): int {
+        if (b.rank !== a.rank)
+            return b.rank - a.rank;
         if (b.count !== a.count)
             return b.count - a.count;
         if (b.last !== a.last)
@@ -270,6 +274,24 @@ PanelWindow {
         if (b.score !== a.score)
             return b.score - a.score;
         return a.entry.name.localeCompare(b.entry.name);
+    }
+
+    // How directly the query names the application, independent of history:
+    // 2 = the whole name or one of its words is the query, 1 = the name or a
+    // word starts with it, 0 = the query only fuzzy-matches. History reorders
+    // within a tier, so a frequently used app still rises — but a neglected
+    // exact match always beats a well-used partial one.
+    function matchRank(needle, entry): int {
+        if (needle.length === 0)
+            return 0;
+        var words = entry.name.toLowerCase().split(/[\s\-_]+/);
+        for (var i = 0; i < words.length; i++) {
+            if (words[i] === needle)
+                return 2;
+            if (words[i].indexOf(needle) === 0)
+                return 1;
+        }
+        return 0;
     }
 
     // Bonuses consecutive characters and word starts; penalises late and long
@@ -464,9 +486,7 @@ PanelWindow {
         Rectangle {
             id: card
 
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: 120
+            anchors.centerIn: parent
             width: 600
             height: layout.implicitHeight + 16
             radius: launcher.theme.radius
