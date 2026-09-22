@@ -1,5 +1,7 @@
-// Audio popout: output (sink) and input (source) level meters, volume sliders
-// and mute toggles for the default devices, plus a headphone/speaker/mic icon.
+// Audio popout: output (sink) and input (source) level meters and volume
+// sliders for the default devices. The device icon (headphone/speaker/mic) is
+// also the mute toggle, drawing the shared mute cross when muted; the sliders
+// take the wheel, and taking one to 0 mutes that device.
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
@@ -10,6 +12,9 @@ PanelWindow {
     id: popout
 
     required property Theme theme
+    // Whether the default sink is a headset; the owner detects this from
+    // PipeWire so the bar block and the popout agree on one answer.
+    property bool headphones: false
 
     // The owner opens/closes us (hover-with-delay or click); hover over the
     // popout itself reports back so it stays open while the pointer is inside.
@@ -30,23 +35,14 @@ PanelWindow {
         return node.description || node.nickname || node.name || "Unknown device";
     }
 
-    function isHeadphones(node): bool {
-        if (!node)
-            return false;
-        var properties = node.properties || ({});
-        var hint = ((properties["device.icon-name"] || "") + " " + (node.name || "") + " " + (node.description || "")).toLowerCase();
-        return hint.indexOf("headphone") >= 0 || hint.indexOf("headset") >= 0;
-    }
-
-    function outputGlyph(node, muted): string {
-        if (!node)
-            return "volume-mute";
-        if (isHeadphones(node))
-            return "headphones";
-        if (muted)
-            return "volume-mute";
-        var volume = node.audio ? node.audio.volume : 0;
-        return volume <= 0.5 ? "volume-low" : "volume";
+    // The device-type half of the output icon; muting swaps it for a mute mark
+    // in the row, otherwise the level waves sit beside it.
+    function outputOn(node): string {
+        if (headphones)
+            return "headphones-level";
+        if (!node || !node.audio)
+            return "volume";
+        return node.audio.volume <= 0.5 ? "volume-low" : "volume";
     }
 
     // Level meter colour: Catppuccin green -> yellow -> red, so a meter reads
@@ -197,11 +193,16 @@ PanelWindow {
                 if (pressed)
                     setFromX(mouse.x);
             }
+            onWheel: event => {
+                slider.moved(Math.max(0, Math.min(1, slider.value + (event.angleDelta.y / 120) * 0.05)));
+            }
         }
     }
 
-    component MuteButton: Glyph {
-        id: mute
+    // The device icon doubles as the mute toggle: it shows the device type, or
+    // the mute mark when muted, and a click toggles that state.
+    component DeviceButton: Glyph {
+        id: button
 
         theme: popout.theme
         property bool muted
@@ -218,7 +219,7 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: -6
             hoverEnabled: true
-            onClicked: mute.toggled()
+            onClicked: button.toggled()
         }
     }
 
@@ -255,29 +256,26 @@ PanelWindow {
                     width: parent.width
                     spacing: 8
 
-                    Glyph {
+                    DeviceButton {
+                        id: muteOut
+
                         anchors.verticalCenter: parent.verticalCenter
-                        theme: popout.theme
-                        name: popout.outputGlyph(popout.sink, popout.sinkAudio ? popout.sinkAudio.muted : false)
-                        color: popout.theme.text
+                        level: popout.sinkAudio ? popout.sinkAudio.volume : 0
+                        muted: popout.sinkAudio ? popout.sinkAudio.muted : false
+                        onName: popout.outputOn(popout.sink)
+                        offName: popout.headphones ? "headphones-mute" : "volume-mute"
+                        onToggled: if (popout.sinkAudio)
+                            popout.sinkAudio.muted = !popout.sinkAudio.muted
                     }
 
                     Text {
-                        width: parent.width - 16 - 8 - muteOut.width
+                        width: parent.width - muteOut.width - 8
                         anchors.verticalCenter: parent.verticalCenter
                         elide: Text.ElideRight
                         text: popout.deviceName(popout.sink)
                         color: popout.theme.text
                         font.family: popout.theme.fontFamily
                         font.pixelSize: popout.theme.fontSizeSmall
-                    }
-
-                    MuteButton {
-                        id: muteOut
-
-                        muted: popout.sinkAudio ? popout.sinkAudio.muted : false
-                        onToggled: if (popout.sinkAudio)
-                            popout.sinkAudio.muted = !popout.sinkAudio.muted
                     }
                 }
 
@@ -295,8 +293,9 @@ PanelWindow {
                         value: popout.sinkAudio ? popout.sinkAudio.volume : 0
                         onMoved: value => {
                             if (popout.sinkAudio) {
-                                popout.sinkAudio.muted = false;
                                 popout.sinkAudio.volume = value;
+                                // Zero is silence: mute so the icon agrees.
+                                popout.sinkAudio.muted = value <= 0;
                             }
                         }
                     }
@@ -322,31 +321,26 @@ PanelWindow {
                     width: parent.width
                     spacing: 8
 
-                    Glyph {
+                    DeviceButton {
+                        id: muteIn
+
                         anchors.verticalCenter: parent.verticalCenter
-                        theme: popout.theme
-                        name: popout.sourceAudio && popout.sourceAudio.muted ? "mic-off" : "mic"
-                        color: popout.theme.text
+                        level: popout.sourceAudio ? popout.sourceAudio.volume : 0
+                        onName: "mic"
+                        offName: "mic-off"
+                        muted: popout.sourceAudio ? popout.sourceAudio.muted : false
+                        onToggled: if (popout.sourceAudio)
+                            popout.sourceAudio.muted = !popout.sourceAudio.muted
                     }
 
                     Text {
-                        width: parent.width - 16 - 8 - muteIn.width
+                        width: parent.width - muteIn.width - 8
                         anchors.verticalCenter: parent.verticalCenter
                         elide: Text.ElideRight
                         text: popout.deviceName(popout.source)
                         color: popout.theme.text
                         font.family: popout.theme.fontFamily
                         font.pixelSize: popout.theme.fontSizeSmall
-                    }
-
-                    MuteButton {
-                        id: muteIn
-
-                        onName: "mic"
-                        offName: "mic-off"
-                        muted: popout.sourceAudio ? popout.sourceAudio.muted : false
-                        onToggled: if (popout.sourceAudio)
-                            popout.sourceAudio.muted = !popout.sourceAudio.muted
                     }
                 }
 
@@ -364,8 +358,8 @@ PanelWindow {
                         value: popout.sourceAudio ? popout.sourceAudio.volume : 0
                         onMoved: value => {
                             if (popout.sourceAudio) {
-                                popout.sourceAudio.muted = false;
                                 popout.sourceAudio.volume = value;
+                                popout.sourceAudio.muted = value <= 0;
                             }
                         }
                     }

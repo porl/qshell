@@ -1,6 +1,7 @@
-// Volume block: shows the default sink's mute state and level. Click opens the
-// audio popout on hover (short delay) or immediately on click/scroll; middle
-// click mutes, scroll adjusts the level.
+// Volume block: shows the default sink's mute state and level, drawing
+// headphones when that sink is a headset and a speaker otherwise. Click opens
+// the audio popout on hover (short delay) or immediately on click/scroll;
+// middle click mutes, scroll adjusts the level.
 import Quickshell
 import Quickshell.Services.Pipewire
 import QtQuick
@@ -15,7 +16,16 @@ Item {
     readonly property bool muted: audio ? audio.muted : false
     readonly property int percent: audio ? Math.round(audio.volume * 100) : 0
     readonly property bool silent: !audio || muted || percent === 0
-    readonly property string glyphName: silent ? "volume-mute" : percent <= 50 ? "volume-low" : "volume"
+    // PipeWire names a headset through the device icon hint or its node name.
+    readonly property bool headphones: {
+        var node = sink;
+        if (!node)
+            return false;
+        var properties = node.properties || ({});
+        var hint = ((properties["device.icon-name"] || "") + " " + (node.name || "") + " " + (node.description || "")).toLowerCase();
+        return hint.indexOf("headphone") >= 0 || hint.indexOf("headset") >= 0;
+    }
+    readonly property string glyphName: headphones ? (silent ? "headphones-mute" : "headphones-level") : (silent ? "volume-mute" : percent <= 50 ? "volume-low" : "volume")
     readonly property real glyphLevel: silent ? 0 : (percent <= 50 ? 0.5 : 1)
     property PopoutState popout: PopoutState {}
 
@@ -73,13 +83,15 @@ Item {
             if (!volume.audio)
                 return;
             const delta = (event.angleDelta.y / 120) * 0.05;
-            volume.audio.muted = false;
-            volume.audio.volume = Math.max(0, Math.min(1, volume.audio.volume + delta));
+            const next = Math.max(0, Math.min(1, volume.audio.volume + delta));
+            volume.audio.volume = next;
+            volume.audio.muted = next <= 0;
         }
     }
 
     VolumePopout {
         theme: volume.theme
+        headphones: volume.headphones
         open: volume.popout.open
         pinned: volume.popout.pinned
         onHoveredChanged: hovered ? volume.popout.contentEntered() : volume.popout.contentExited()

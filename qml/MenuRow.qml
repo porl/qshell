@@ -53,19 +53,19 @@ Item {
         visible: !row.separator
         spacing: 8
 
-        Text {
+        Glyph {
             visible: row.entry !== null && row.entry.buttonType !== QsMenuButtonType.None
             Layout.preferredWidth: 14
-            horizontalAlignment: Text.AlignHCenter
+            Layout.preferredHeight: 14
+            theme: row.menu.theme
+            size: row.menu.theme.fontSizeSmall
             color: row.entry && row.entry.checkState === Qt.Checked ? row.menu.theme.accent : row.menu.theme.overlay
-            font.family: row.menu.theme.fontFamily
-            font.pixelSize: row.menu.theme.fontSizeSmall
-            text: {
+            name: {
                 if (!row.entry)
                     return "";
                 if (row.entry.buttonType === QsMenuButtonType.RadioButton)
-                    return row.entry.checkState === Qt.Checked ? "●" : "○";
-                return row.entry.checkState === Qt.Checked ? "✓" : "";
+                    return row.entry.checkState === Qt.Checked ? "radio" : "radio-off";
+                return row.entry.checkState === Qt.Checked ? "check" : "";
             }
         }
 
@@ -86,12 +86,14 @@ Item {
             text: row.entry ? row.entry.text : ""
         }
 
-        Text {
+        Glyph {
             visible: row.hasChildren
+            Layout.preferredWidth: 10
+            Layout.preferredHeight: 14
+            theme: row.menu.theme
+            size: row.menu.theme.fontSizeSmall
+            name: "chevron-left"
             color: row.menu.theme.overlay
-            font.family: row.menu.theme.fontFamily
-            font.pixelSize: row.menu.theme.fontSizeSmall
-            text: "‹"
         }
     }
 

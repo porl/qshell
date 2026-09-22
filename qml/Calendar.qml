@@ -75,6 +75,36 @@ PanelWindow {
         calendar.dismissRequested();
     }
 
+    // A nav chevron: one of our own glyphs, coloured on hover. The title is a
+    // separate item so the four buttons stay symmetric around it.
+    component NavButton: Item {
+        id: nav
+
+        property string glyph: ""
+        property int glyphSize: calendar.theme.fontSize
+        signal triggered()
+
+        width: 20
+        height: 24
+
+        Glyph {
+            anchors.centerIn: parent
+            theme: calendar.theme
+            name: nav.glyph
+            size: nav.glyphSize
+            color: navHover.containsMouse ? calendar.theme.accent : calendar.theme.subtext
+        }
+
+        MouseArea {
+            id: navHover
+
+            anchors.fill: parent
+            anchors.margins: -6
+            hoverEnabled: true
+            onClicked: nav.triggered()
+        }
+    }
+
     visible: open
     implicitWidth: cardWidth
     implicitHeight: layout.implicitHeight + 20
@@ -123,43 +153,26 @@ PanelWindow {
 
             Row {
                 width: parent.width
+                height: 24
                 spacing: 4
 
-                Text {
+                NavButton {
                     width: 24
-                    horizontalAlignment: Text.AlignHCenter
-                    text: "«"
-                    color: prevYear.containsMouse ? calendar.theme.accent : calendar.theme.subtext
-                    font.family: calendar.theme.fontFamily
-                    font.pixelSize: calendar.theme.fontSizeSmall
-                    MouseArea {
-                        id: prevYear
-                        anchors.fill: parent
-                        anchors.margins: -6
-                        hoverEnabled: true
-                        onClicked: calendar.shownYear -= 1
-                    }
+                    glyph: "chevron-double-left"
+                    glyphSize: calendar.theme.fontSizeSmall
+                    onTriggered: calendar.shownYear -= 1
                 }
 
-                Text {
-                    width: 20
-                    horizontalAlignment: Text.AlignHCenter
-                    text: "‹"
-                    color: prevMonth.containsMouse ? calendar.theme.accent : calendar.theme.subtext
-                    font.family: calendar.theme.fontFamily
-                    font.pixelSize: calendar.theme.fontSize
-                    MouseArea {
-                        id: prevMonth
-                        anchors.fill: parent
-                        anchors.margins: -6
-                        hoverEnabled: true
-                        onClicked: calendar.shiftMonth(-1)
-                    }
+                NavButton {
+                    glyph: "chevron-left"
+                    onTriggered: calendar.shiftMonth(-1)
                 }
 
                 Text {
                     width: parent.width - 24 - 20 - 20 - 24 - 16
+                    height: 24
                     horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                     text: Qt.formatDate(new Date(calendar.shownYear, calendar.shownMonth, 1), "MMMM yyyy")
                     color: title.containsMouse ? calendar.theme.accent : calendar.theme.text
                     font.family: calendar.theme.fontFamily
@@ -173,36 +186,16 @@ PanelWindow {
                     }
                 }
 
-                Text {
-                    width: 20
-                    horizontalAlignment: Text.AlignHCenter
-                    text: "›"
-                    color: nextMonth.containsMouse ? calendar.theme.accent : calendar.theme.subtext
-                    font.family: calendar.theme.fontFamily
-                    font.pixelSize: calendar.theme.fontSize
-                    MouseArea {
-                        id: nextMonth
-                        anchors.fill: parent
-                        anchors.margins: -6
-                        hoverEnabled: true
-                        onClicked: calendar.shiftMonth(1)
-                    }
+                NavButton {
+                    glyph: "chevron-right"
+                    onTriggered: calendar.shiftMonth(1)
                 }
 
-                Text {
+                NavButton {
                     width: 24
-                    horizontalAlignment: Text.AlignHCenter
-                    text: "»"
-                    color: nextYear.containsMouse ? calendar.theme.accent : calendar.theme.subtext
-                    font.family: calendar.theme.fontFamily
-                    font.pixelSize: calendar.theme.fontSizeSmall
-                    MouseArea {
-                        id: nextYear
-                        anchors.fill: parent
-                        anchors.margins: -6
-                        hoverEnabled: true
-                        onClicked: calendar.shownYear += 1
-                    }
+                    glyph: "chevron-double-right"
+                    glyphSize: calendar.theme.fontSizeSmall
+                    onTriggered: calendar.shownYear += 1
                 }
             }
 

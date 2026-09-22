@@ -21,12 +21,16 @@ compositor bindings.
   areas extend to the screen edges, so the corners are not dead zones.
 - `qml/Workspaces.qml` — per-monitor workspace indicator (click to activate),
   driven by Quickshell's Hyprland integration.
-- `qml/Volume.qml` — default-sink volume/mute. Opens the audio popout on hover
-  (short delay) or immediately on scroll; scroll and middle-click fade out on
-  mouse-out, while left/right click pins it until focus is lost. Middle-click
-  mutes, scroll adjusts volume.
+- `qml/Volume.qml` — default-sink volume/mute. Draws headphones when that sink
+  is a headset (from the PipeWire device hint) and a speaker otherwise; the
+  level waves sit beside the icon and are replaced by the mute cross when muted.
+  Opens the audio popout on hover (short delay) or immediately on scroll; scroll
+  and middle-click fade out on mouse-out, while left/right click pins it until
+  focus is lost. Middle-click mutes, scroll adjusts volume (0 mutes).
 - `qml/VolumePopout.qml` — output/input stereo level meters (per-channel
-  PwNodePeakMonitor), volume sliders and mute, with a headphone/speaker/mic icon.
+  PwNodePeakMonitor) and volume sliders. The device icon (headphone/speaker/mic)
+  doubles as the mute toggle — it draws the shared mute cross when muted — and
+  the sliders take the scroll wheel; taking a slider to 0 mutes that device.
 - `qml/PopoutState.qml` — shared popout open/close policy: hovering the bar
   block opens after a delay and fades when the pointer leaves; clicking (or
   scrolling) opens immediately and pins the popout until focus is lost. The

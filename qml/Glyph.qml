@@ -20,8 +20,15 @@ Item {
             return 1.05;
         if (name === "bluetooth")
             return 0.6;
-        if (name === "volume" || name === "volume-low" || name === "volume-mute")
+        // These reserve room on the right for the level waves / mute cross.
+        if (name === "volume" || name === "volume-low" || name === "volume-mute" || name === "mic" || name === "mic-off")
             return 1.5;
+        if (name === "headphones-level" || name === "headphones-mute")
+            return 1.8;
+        if (name === "chevron-left" || name === "chevron-right")
+            return 0.6;
+        if (name === "chevron-double-left" || name === "chevron-double-right")
+            return 1;
         return 1;
     }
 
@@ -57,6 +64,35 @@ Item {
         ctx.closePath();
     }
 
+    // The shared mute mark: one X, so the speaker, headphone and mic mute
+    // states read identically. `half` is the arm length from the centre.
+    function drawMuteCross(ctx, cx, cy, half, lineWidth) {
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(cx - half, cy - half);
+        ctx.lineTo(cx + half, cy + half);
+        ctx.moveTo(cx + half, cy - half);
+        ctx.lineTo(cx - half, cy + half);
+        ctx.stroke();
+    }
+
+    // The shared level mark: sound waves opening right from `x`, the same two
+    // steps the speaker uses. Drawn to the side of the device so it never
+    // overlaps it, and swapped for the cross when muted.
+    function drawLevelWaves(ctx, x, s, level, lineWidth) {
+        if (level <= 0)
+            return;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        ctx.arc(x, 0.5 * s, 0.24 * s, -Math.PI * 0.25, Math.PI * 0.25);
+        ctx.stroke();
+        if (level > 0.75) {
+            ctx.beginPath();
+            ctx.arc(x, 0.5 * s, 0.42 * s, -Math.PI * 0.25, Math.PI * 0.25);
+            ctx.stroke();
+        }
+    }
+
     function paint(ctx, w, h) {
         ctx.reset();
         ctx.fillStyle = glyph.color;
@@ -69,8 +105,10 @@ Item {
             drawWifi(ctx, w, h);
         else if (n === "ethernet")
             drawEthernet(ctx, w, h);
-        else if (n === "volume" || n === "volume-low" || n === "volume-mute")
-            drawVolume(ctx, w, h);
+        else if (n === "volume" || n === "volume-low")
+            drawVolume(ctx, w, h, false);
+        else if (n === "volume-mute")
+            drawVolume(ctx, w, h, true);
         else if (n === "battery")
             drawBattery(ctx, w, h);
         else if (n === "power")
@@ -92,7 +130,27 @@ Item {
         else if (n === "lock")
             drawLock(ctx, w, h);
         else if (n === "headphones")
-            drawHeadphones(ctx, w, h);
+            drawHeadphones(ctx, w, h, "plain");
+        else if (n === "headphones-level")
+            drawHeadphones(ctx, w, h, "level");
+        else if (n === "headphones-mute")
+            drawHeadphones(ctx, w, h, "mute");
+        else if (n === "close")
+            drawClose(ctx, w, h);
+        else if (n === "chevron-left")
+            drawChevron(ctx, w, h, -1, false);
+        else if (n === "chevron-right")
+            drawChevron(ctx, w, h, 1, false);
+        else if (n === "chevron-double-left")
+            drawChevron(ctx, w, h, -1, true);
+        else if (n === "chevron-double-right")
+            drawChevron(ctx, w, h, 1, true);
+        else if (n === "check")
+            drawCheck(ctx, w, h);
+        else if (n === "radio")
+            drawRadio(ctx, w, h, true);
+        else if (n === "radio-off")
+            drawRadio(ctx, w, h, false);
         else if (n === "keyboard")
             drawKeyboard(ctx, w, h);
         else if (n === "mouse")
@@ -146,7 +204,7 @@ Item {
         ctx.stroke();
     }
 
-    function drawVolume(ctx, w, h) {
+    function drawVolume(ctx, w, h, muted) {
         var s = h;
         var cx = w / 2;
         ctx.lineWidth = Math.max(1.5, s * 0.09);
@@ -160,24 +218,11 @@ Item {
         ctx.lineTo(cx - 0.30 * s, 0.62 * s);
         ctx.closePath();
         ctx.fill();
-        var lv = glyph.level;
-        if (lv <= 0.1) {
-            ctx.beginPath();
-            ctx.moveTo(cx + 0.22 * s, 0.38 * s);
-            ctx.lineTo(cx + 0.44 * s, 0.62 * s);
-            ctx.moveTo(cx + 0.44 * s, 0.38 * s);
-            ctx.lineTo(cx + 0.22 * s, 0.62 * s);
-            ctx.stroke();
+        if (muted) {
+            drawMuteCross(ctx, cx + 0.33 * s, 0.50 * s, 0.13 * s, ctx.lineWidth);
             return;
         }
-        ctx.beginPath();
-        ctx.arc(cx + 0.04 * s, 0.5 * s, 0.24 * s, -Math.PI * 0.25, Math.PI * 0.25);
-        ctx.stroke();
-        if (lv > 0.75) {
-            ctx.beginPath();
-            ctx.arc(cx + 0.04 * s, 0.5 * s, 0.42 * s, -Math.PI * 0.25, Math.PI * 0.25);
-            ctx.stroke();
-        }
+        drawLevelWaves(ctx, cx + 0.04 * s, s, glyph.level, ctx.lineWidth);
     }
 
     function drawBattery(ctx, w, h) {
@@ -336,17 +381,85 @@ Item {
         ctx.stroke();
     }
 
-    function drawHeadphones(ctx, w, h) {
+    function drawHeadphones(ctx, w, h, mode) {
         var s = h;
-        var cx = w / 2;
+        // Centre the device plus its side indicator, not just the band.
+        var cx = mode === "plain" ? w / 2 : w / 2 - 0.21 * s;
         ctx.lineWidth = Math.max(1.5, s * 0.12);
+        // Band: unchanged.
         ctx.beginPath();
         ctx.arc(cx, 0.52 * s, 0.30 * s, Math.PI, 0);
         ctx.stroke();
-        roundedRect(ctx, cx - 0.36 * s, 0.52 * s, 0.14 * s, 0.26 * s, 0.06 * s);
+        // Ear pieces, wider than the band stroke so they read at a glance.
+        roundedRect(ctx, cx - 0.36 * s, 0.52 * s, 0.20 * s, 0.26 * s, 0.07 * s);
         ctx.fill();
-        roundedRect(ctx, cx + 0.22 * s, 0.52 * s, 0.14 * s, 0.26 * s, 0.06 * s);
+        roundedRect(ctx, cx + 0.16 * s, 0.52 * s, 0.20 * s, 0.26 * s, 0.07 * s);
         ctx.fill();
+        // Level / mute, beside the right ear piece like the speaker's waves.
+        if (mode === "mute")
+            drawMuteCross(ctx, cx + 0.58 * s, 0.50 * s, 0.13 * s, Math.max(1.5, s * 0.09));
+        else if (mode === "level")
+            drawLevelWaves(ctx, cx + 0.36 * s, s, glyph.level, Math.max(1.5, s * 0.09));
+    }
+
+    function drawClose(ctx, w, h) {
+        var s = h;
+        var cx = w / 2;
+        var cy = h / 2;
+        var r = 0.28 * s;
+        ctx.lineWidth = Math.max(1.5, s * 0.12);
+        ctx.beginPath();
+        ctx.moveTo(cx - r, cy - r);
+        ctx.lineTo(cx + r, cy + r);
+        ctx.moveTo(cx + r, cy - r);
+        ctx.lineTo(cx - r, cy + r);
+        ctx.stroke();
+    }
+
+    // `dir` is 1 for a chevron pointing right, -1 for left; `pair` draws two.
+    // Each V is centred on its own midpoint so single and double read evenly.
+    function drawChevron(ctx, w, h, dir, pair) {
+        var s = h;
+        var cx = w / 2;
+        var cy = h / 2;
+        var reach = 0.20 * s;
+        var half = 0.24 * s;
+        ctx.lineWidth = Math.max(1.5, s * 0.12);
+        var centers = pair ? [-0.17 * s, 0.17 * s] : [0];
+        for (var i = 0; i < centers.length; i++) {
+            var mid = cx + centers[i];
+            var tip = mid + dir * reach / 2;
+            var back = mid - dir * reach / 2;
+            ctx.beginPath();
+            ctx.moveTo(back, cy - half);
+            ctx.lineTo(tip, cy);
+            ctx.lineTo(back, cy + half);
+            ctx.stroke();
+        }
+    }
+
+    function drawCheck(ctx, w, h) {
+        var s = h;
+        var cx = w / 2;
+        ctx.lineWidth = Math.max(1.5, s * 0.13);
+        ctx.beginPath();
+        ctx.moveTo(cx - 0.26 * s, 0.52 * s);
+        ctx.lineTo(cx - 0.06 * s, 0.72 * s);
+        ctx.lineTo(cx + 0.28 * s, 0.28 * s);
+        ctx.stroke();
+    }
+
+    function drawRadio(ctx, w, h, filled) {
+        var s = h;
+        var cx = w / 2;
+        var cy = h / 2;
+        ctx.lineWidth = Math.max(1.5, s * 0.11);
+        ctx.beginPath();
+        ctx.arc(cx, cy, 0.30 * s, 0, Math.PI * 2);
+        if (filled)
+            ctx.fill();
+        else
+            ctx.stroke();
     }
 
     function drawKeyboard(ctx, w, h) {
@@ -389,7 +502,8 @@ Item {
 
     function drawMic(ctx, w, h, off) {
         var s = h;
-        var cx = w / 2;
+        // Centre the mic plus its side indicator, not just the capsule.
+        var cx = w / 2 - 0.21 * s;
         ctx.lineWidth = Math.max(1.5, s * 0.1);
         roundedRect(ctx, cx - 0.13 * s, 0.16 * s, 0.26 * s, 0.40 * s, 0.13 * s);
         ctx.stroke();
@@ -402,12 +516,10 @@ Item {
         ctx.moveTo(cx - 0.10 * s, 0.86 * s);
         ctx.lineTo(cx + 0.10 * s, 0.86 * s);
         ctx.stroke();
-        if (off) {
-            ctx.beginPath();
-            ctx.moveTo(cx - 0.28 * s, 0.22 * s);
-            ctx.lineTo(cx + 0.28 * s, 0.78 * s);
-            ctx.stroke();
-        }
+        if (off)
+            drawMuteCross(ctx, cx + 0.45 * s, 0.50 * s, 0.13 * s, Math.max(1.5, s * 0.09));
+        else
+            drawLevelWaves(ctx, cx + 0.24 * s, s, glyph.level, Math.max(1.5, s * 0.09));
     }
 
     function drawLeaf(ctx, w, h) {

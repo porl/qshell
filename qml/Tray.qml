@@ -98,13 +98,13 @@ Item {
                 }
             }
 
-            Text {
+            Glyph {
                 anchors.centerIn: parent
-                color: hover.containsMouse || expander.popout.open ? tray.theme.accent : tray.theme.text
-                font.family: tray.theme.fontFamily
+                theme: tray.theme
+                name: "chevron-double-right"
                 // Slightly smaller than the icons.
-                font.pixelSize: tray.theme.trayIconSize - 2
-                text: "»"
+                size: tray.theme.trayIconSize - 2
+                color: hover.containsMouse || expander.popout.open ? tray.theme.accent : tray.theme.text
             }
 
             MouseArea {

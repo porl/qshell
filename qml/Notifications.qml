@@ -282,13 +282,13 @@ PanelWindow {
                                     Component.onCompleted: requestPaint()
                                 }
 
-                                Text {
+                                Glyph {
                                     anchors.centerIn: parent
                                     visible: notifControl.showClose
-                                    text: "󰅖"
+                                    theme: root.theme
+                                    name: "close"
+                                    size: root.theme.fontSizeSmall
                                     color: controlArea.containsMouse ? root.theme.danger : root.theme.overlay
-                                    font.family: root.theme.fontFamily
-                                    font.pixelSize: root.theme.fontSizeSmall
                                 }
 
                                 MouseArea {
