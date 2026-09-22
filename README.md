@@ -30,7 +30,11 @@ compositor bindings.
 - `qml/VolumePopout.qml` — output/input stereo level meters (per-channel
   PwNodePeakMonitor) and volume sliders. The device icon (headphone/speaker/mic)
   doubles as the mute toggle — it draws the shared mute cross when muted — and
-  the sliders take the scroll wheel; taking a slider to 0 mutes that device.
+  the sliders take the scroll wheel; taking a slider to 0 mutes that device. A
+  cog opens the mixer named by `QSHELL_AUDIO_MANAGER` (e.g. `pavucontrol`,
+  `pavucontrol-qt`, `kmix`); it is hidden when the variable is unset. The popout
+  whitelists the bar in its focus grab, so scrolling the volume block keeps
+  working while it is pinned.
 - `qml/PopoutState.qml` — shared popout open/close policy: hovering the bar
   block opens after a delay and fades when the pointer leaves; clicking (or
   scrolling) opens immediately and pins the popout until focus is lost. The
@@ -61,9 +65,9 @@ compositor bindings.
   the machine has none).
 - `qml/NetworkBlock.qml` / `qml/NetworkPopout.qml` — network status and a popout:
   wifi on/off toggle, wired link, the network list (signal shown as percent),
-  hover-revealed connect/disconnect actions, and a configurable manager launcher
-  (`QSHELL_NETWORK_MANAGER`, default `nm-connection-editor`). Scans only while
-  open.
+  hover-revealed connect/disconnect actions, and a manager launcher
+  (`QSHELL_NETWORK_MANAGER`, e.g. `nm-connection-editor` or `nmtui`) whose cog
+  is hidden when the variable is unset. Scans only while open.
 - `qml/BluetoothBlock.qml` / `qml/BluetoothPopout.qml` — Bluetooth status and a
   popout: adapter toggle, Scan/Stop, and the device list with hover-revealed
   connect/disconnect/pair actions (right-click forgets).

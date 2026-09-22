@@ -7,6 +7,7 @@ import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 import QtQuick
+import QtQuick.Layouts
 
 PanelWindow {
     id: popout
@@ -15,6 +16,13 @@ PanelWindow {
     // Whether the default sink is a headset; the owner detects this from
     // PipeWire so the bar block and the popout agree on one answer.
     property bool headphones: false
+    // The window that opened us. It is whitelisted with us in the focus grab
+    // so mouse input on the bar (scrolling the block) still reaches it; the
+    // grab otherwise clears on any event outside the popout.
+    property var anchorWindow: null
+    // The mixer to open from the cog (e.g. pavucontrol, pavucontrol-qt, kmix).
+    // Unset hides the cog rather than offering a launcher that does nothing.
+    readonly property string manager: Quickshell.env("QSHELL_AUDIO_MANAGER") || ""
 
     // The owner opens/closes us (hover-with-delay or click); hover over the
     // popout itself reports back so it stays open while the pointer is inside.
@@ -33,6 +41,10 @@ PanelWindow {
         if (!node)
             return "No device";
         return node.description || node.nickname || node.name || "Unknown device";
+    }
+
+    function launchManager(): void {
+        Quickshell.execDetached(["sh", "-c", manager]);
     }
 
     // The device-type half of the output icon; muting swaps it for a mute mark
@@ -76,10 +88,12 @@ PanelWindow {
     margins.top: 38
     margins.right: 8
 
-    // A click-opened (pinned) popout closes when it loses focus.
+    // A click-opened (pinned) popout closes when it loses focus. The bar is
+    // whitelisted too so scrolling the block is passed through rather than
+    // clearing the grab; opening another block's popout still clears this one.
     HyprlandFocusGrab {
         active: popout.open && popout.pinned
-        windows: [popout]
+        windows: popout.anchorWindow ? [popout, popout.anchorWindow] : [popout]
         onCleared: popout.focusLost()
     }
 
@@ -223,6 +237,24 @@ PanelWindow {
         }
     }
 
+    component IconAction: Glyph {
+        id: action
+
+        theme: popout.theme
+        signal triggered()
+
+        color: actionHover.containsMouse ? popout.theme.accent : popout.theme.subtext
+
+        MouseArea {
+            id: actionHover
+
+            anchors.fill: parent
+            anchors.margins: -5
+            hoverEnabled: true
+            onClicked: action.triggered()
+        }
+    }
+
     Rectangle {
         anchors.fill: parent
         radius: popout.theme.radius
@@ -244,6 +276,35 @@ PanelWindow {
                     rightMargin: 12
                 }
                 spacing: 6
+
+                RowLayout {
+                    width: parent.width
+                    spacing: 8
+
+                    Text {
+                        id: heading
+
+                        Layout.alignment: Qt.AlignVCenter
+                        text: "Audio"
+                        color: popout.theme.subtext
+                        font.family: popout.theme.fontFamily
+                        font.pixelSize: popout.theme.fontSizeTiny
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
+                    }
+
+                    IconAction {
+                        id: managerAction
+
+                        Layout.alignment: Qt.AlignVCenter
+                        visible: popout.manager !== ""
+                        name: "gear"
+                        onTriggered: popout.launchManager()
+                    }
+                }
 
                 Text {
                     text: "Output"

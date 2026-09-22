@@ -10,6 +10,9 @@ Item {
     id: volume
 
     required property Theme theme
+    // The bar window. The popout whitelists it in its focus grab so input on
+    // the block (scrolling, clicking) is not swallowed by the grab.
+    property var anchorWindow: null
 
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var audio: sink && sink.audio ? sink.audio : null
@@ -92,6 +95,7 @@ Item {
     VolumePopout {
         theme: volume.theme
         headphones: volume.headphones
+        anchorWindow: volume.anchorWindow
         open: volume.popout.open
         pinned: volume.popout.pinned
         onHoveredChanged: hovered ? volume.popout.contentEntered() : volume.popout.contentExited()

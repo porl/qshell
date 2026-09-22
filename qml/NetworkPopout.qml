@@ -7,6 +7,7 @@ import Quickshell.Hyprland
 import Quickshell.Networking
 import Quickshell.Wayland
 import QtQuick
+import QtQuick.Layouts
 
 PanelWindow {
     id: popout
@@ -43,7 +44,8 @@ PanelWindow {
         });
     }
     // The network manager GUI to launch, e.g. nm-connection-editor or nmtui.
-    readonly property string manager: Quickshell.env("QSHELL_NETWORK_MANAGER") || "nm-connection-editor"
+    // Unset hides the cog rather than offering a launcher that does nothing.
+    readonly property string manager: Quickshell.env("QSHELL_NETWORK_MANAGER") || ""
 
     // The secured, unsaved network awaiting a password.
     property var pendingNetwork: null
@@ -240,14 +242,14 @@ PanelWindow {
                 }
                 spacing: 6
 
-                Row {
+                RowLayout {
                     width: parent.width
                     spacing: 8
 
                     Text {
                         id: heading
 
-                        anchors.verticalCenter: parent.verticalCenter
+                        Layout.alignment: Qt.AlignVCenter
                         text: "Network"
                         color: popout.theme.subtext
                         font.family: popout.theme.fontFamily
@@ -255,14 +257,15 @@ PanelWindow {
                     }
 
                     Item {
-                        width: Math.max(0, parent.width - heading.width - managerAction.width - wifiLabel.width - wifiToggle.width - parent.spacing * 4)
-                        height: 1
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
                     }
 
                     IconAction {
                         id: managerAction
 
-                        anchors.verticalCenter: parent.verticalCenter
+                        Layout.alignment: Qt.AlignVCenter
+                        visible: popout.manager !== ""
                         name: "gear"
                         onTriggered: popout.launchManager()
                     }
@@ -270,7 +273,7 @@ PanelWindow {
                     Text {
                         id: wifiLabel
 
-                        anchors.verticalCenter: parent.verticalCenter
+                        Layout.alignment: Qt.AlignVCenter
                         visible: popout.wifiDevice !== null
                         text: "Wi-Fi"
                         color: popout.theme.subtext
@@ -281,7 +284,7 @@ PanelWindow {
                     Toggle {
                         id: wifiToggle
 
-                        anchors.verticalCenter: parent.verticalCenter
+                        Layout.alignment: Qt.AlignVCenter
                         visible: popout.wifiDevice !== null
                         theme: popout.theme
                         on: Networking.wifiEnabled

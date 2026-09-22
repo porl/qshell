@@ -9,6 +9,8 @@ Item {
     id: brightness
 
     required property Theme theme
+    // The bar window, passed through to the popout's focus grab.
+    property var anchorWindow: null
 
     property int percent: 0
     property bool available: false
@@ -129,6 +131,7 @@ Item {
 
     BrightnessPopout {
         theme: brightness.theme
+        anchorWindow: brightness.anchorWindow
         open: brightness.popout.open
         pinned: brightness.popout.pinned
         percent: brightness.percent

@@ -91,6 +91,7 @@ PanelWindow {
 
             theme: bar.theme
             height: bar.implicitHeight
+            anchorWindow: bar
         }
 
         Volume {
@@ -98,6 +99,7 @@ PanelWindow {
 
             theme: bar.theme
             height: bar.implicitHeight
+            anchorWindow: bar
         }
 
         Battery {

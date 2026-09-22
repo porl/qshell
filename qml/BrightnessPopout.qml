@@ -12,6 +12,9 @@ PanelWindow {
     id: popout
 
     required property Theme theme
+    // The bar window, whitelisted in the focus grab so scrolling the block
+    // still reaches it while the popout is pinned.
+    property var anchorWindow: null
 
     property bool open: false
     property bool pinned: false
@@ -41,7 +44,7 @@ PanelWindow {
 
     HyprlandFocusGrab {
         active: popout.open && popout.pinned
-        windows: [popout]
+        windows: popout.anchorWindow ? [popout, popout.anchorWindow] : [popout]
         onCleared: popout.focusLost()
     }
 
