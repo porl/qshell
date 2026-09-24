@@ -5,13 +5,21 @@
 set -euo pipefail
 
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
-export QSHELL_QML="${QSHELL_QML:-$repo/qml}"
-export QSHELL_SOCKET="${QSHELL_SOCKET:-${XDG_RUNTIME_DIR:-/tmp}/qshell.sock}"
+qcommon="${QSHELL_COMMON:-$repo/../qcommon/qml}"
 
 if ! command -v cargo >/dev/null 2>&1; then
     echo "dev-session: cargo not found; run this inside 'nix develop'." >&2
     exit 1
 fi
 
-exec cargo run --manifest-path "$repo/Cargo.toml" -- "$@"
+# The shared components live in qcommon; merge the two trees so the QML
+# resolves by name, matching the packaged tree.
+merged="$(mktemp -d)"
+trap 'rm -rf "$merged"' EXIT
+cp -r "$qcommon"/. "$merged"/
+cp -r "$repo/qml"/. "$merged"/
+
+export QSHELL_QML="${QSHELL_QML:-$merged}"
+export QSHELL_SOCKET="${QSHELL_SOCKET:-${XDG_RUNTIME_DIR:-/tmp}/qshell.sock}"
+
+cargo run --manifest-path "$repo/Cargo.toml" -- "$@"

@@ -16,6 +16,10 @@ compositor bindings.
 
 ## Contents
 
+> The bar and its components live in **[qcommon](../qcommon)** (`github:porl/qcommon`) and are
+> shared with qmlgreetd's login screen. qshell keeps `shell.qml`, `Launcher.qml` and
+> `Notifications.qml`; the rest are qcommon files, listed here because this is where they are used.
+
 - `qml/Bar.qml` — top bar (workspaces, media, tray, network, bluetooth,
   brightness, volume, battery, power, clock) as a layer-shell surface. Block hit
   areas extend to the screen edges, so the corners are not dead zones.

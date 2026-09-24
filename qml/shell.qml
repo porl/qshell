@@ -12,6 +12,7 @@ ShellRoot {
     id: shell
 
     readonly property Theme theme: Theme {}
+    readonly property PowerCaps powerCaps: PowerCaps {}
     readonly property string controlSocket: Quickshell.env("QSHELL_SOCKET")
         || (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/qshell.sock"
 
@@ -49,6 +50,25 @@ ShellRoot {
         id: sessionMenu
 
         theme: shell.theme
+        context: "session"
+        canSuspend: shell.powerCaps.canSuspend
+        canHibernate: shell.powerCaps.canHibernate
+        onActionTriggered: action => shell.runSessionAction(action)
+    }
+
+    function runSessionAction(action: string): void {
+        if (action === "lock")
+            Quickshell.execDetached(["hyprlock"]);
+        else if (action === "logout")
+            Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.exit()"]);
+        else if (action === "suspend")
+            Quickshell.execDetached(["systemctl", "suspend"]);
+        else if (action === "hibernate")
+            Quickshell.execDetached(["systemctl", "hibernate"]);
+        else if (action === "reboot")
+            Quickshell.execDetached(["systemctl", "reboot"]);
+        else if (action === "poweroff")
+            Quickshell.execDetached(["systemctl", "poweroff"]);
     }
 
     Launcher {

@@ -2,9 +2,13 @@
   description = "qshell - a Quickshell desktop shell for Hyprland";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+  inputs.qcommon = {
+    url = "github:porl/qcommon";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
   outputs =
-    { self, nixpkgs }:
+    { self, nixpkgs, qcommon }:
     let
       systems = [
         "x86_64-linux"
@@ -14,11 +18,14 @@
       forAllSystems =
         f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
 
+      # The shared qcommon components are copied in first, then qshell's own
+      # files, so both resolve by name through QML's implicit directory import.
       qmlTree =
         pkgs:
         pkgs.runCommand "qshell-qml" { } ''
-          mkdir -p $out/share/qshell
-          cp -r ${./qml} $out/share/qshell/qml
+          mkdir -p $out/share/qshell/qml
+          cp -r ${qcommon.packages.${pkgs.stdenv.hostPlatform.system}.default}/share/qcommon/qml/. $out/share/qshell/qml/
+          cp -r ${./qml}/. $out/share/qshell/qml/
         '';
 
       # The bridge needs the QML path at runtime; bake it in so the package is
