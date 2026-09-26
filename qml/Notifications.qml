@@ -110,13 +110,14 @@ PanelWindow {
                 readonly property int autoMs: {
                     // Critical notifications stay until dismissed, as the spec
                     // asks. A sender can keep a normal one too by requesting
-                    // `expire_timeout = 0` (`notify-send -t 0`).
+                    // `expire_timeout = 0` (`notify-send -t 0`). The D-Bus
+                    // timeout is already in milliseconds.
                     if (critical)
                         return -1;
                     if (notification.expireTimeout === 0)
                         return -1;
                     if (notification.expireTimeout > 0)
-                        return Math.round(notification.expireTimeout * 1000);
+                        return Math.round(notification.expireTimeout);
                     return 5000;
                 }
                 // Beyond the cap, cards are created (so their countdown still
