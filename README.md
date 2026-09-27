@@ -95,6 +95,8 @@ compositor bindings.
 - `qml/Launcher.qml` — application launcher: desktop entries, subsequence
   filtering over name/generic name/keywords/comment, match-quality and
   launch-frequency ranking, and a `>`/`=` run mode.
+- `qml/Switcher.qml` — window switcher: the open windows, most recently used
+  first, each tile a live capture; opened by the bridge on `SUPER+Tab`.
 - `qml/Notifications.qml` — desktop notifications: a `NotificationServer` (so
   qshell owns `org.freedesktop.Notifications`) with themed popups that
   auto-dismiss unless hovered (countdown ring; critical never auto-clears),
@@ -115,11 +117,13 @@ are mapped only while open.
 
 ## Shortcuts
 
-The bridge registers two Hyprland global shortcuts — `qshell:launcher` and
-`qshell:session` — which send `launcher toggle` and `session toggle` on the
+The bridge registers four Hyprland global shortcuts — `qshell:launcher`,
+`qshell:session`, `qshell:switcher` and `qshell:switcher-prev` — which send
+`launcher toggle`, `session toggle` and `switcher next`/`switcher prev` on the
 control socket. The compositor config binds keys to those names; the shell does
 not choose them. Hyprland reports a press bind as `pressed` and a release bind
-as `released`; the event-to-command mapping lives in the bridge.
+as `released`; the event-to-command mapping lives in the bridge, including the
+SUPER+Tab hold policy below.
 
 ## Launcher
 
@@ -146,6 +150,29 @@ The terminal used by `>`, `>>` and terminal-based file handlers is
 falling back to `TERMINAL`, then `xdg-terminal-exec`; no emulator is assumed.
 The editor fallback is `QSHELL_EDITOR`, then `EDITOR`, then `VISUAL`, then
 `nvim`.
+
+## Window switcher
+
+`SUPER+Tab` opens a switcher over the session: the open windows, most recently
+used first, each tile a live capture (the same `ScreencopyView` the workspace
+preview uses). The focused workspace's windows come first and the rest follow in
+MRU order; MRU is tracked from Hyprland's focus changes and seeded from its
+focus history at startup. A window's title, class and workspace are searchable,
+so typing narrows the list and the arrow keys walk it.
+
+The bridge gives `SUPER+Tab` both of the shapes that fit that key:
+
+- **tap** — press and release quickly and the list stays open: type to filter,
+  arrow to move, Enter (or a click) to focus, Escape (or a click on the
+  backdrop) to cancel. `Shift+Enter`, or a shift-click, brings the window to
+  the current workspace instead of following it to its own.
+- **hold** — keep SUPER down and tap Tab to walk the list; releasing SUPER
+  commits the highlighted window. `SUPER+Shift+Tab` walks the other way.
+
+A hold with more than one Tab press commits as well, so a quick double-tap
+switches without leaving the list up. While a hold is in progress the bridge
+suppresses the lone-SUPER launcher toggle that SUPER's release would otherwise
+send.
 
 ## Calendar (TODO)
 

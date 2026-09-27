@@ -66,6 +66,25 @@
       checks = forAllSystems (pkgs: {
         build = qshell pkgs;
 
+        # The switcher's pure ordering and filtering (qml/SwitcherOrder.js).
+        # The QML tree is copied with qcommon merged in (the module imports
+        # FuzzyMatch.js from it), offscreen like qcommon's own tests.
+        tests = pkgs.runCommand "qshell-tests" {
+          nativeBuildInputs = [ pkgs.qt6.qtdeclarative ];
+        } ''
+          mkdir -p src/qml
+          cp -r ${qcommon.packages.${pkgs.stdenv.hostPlatform.system}.default}/share/qcommon/qml/. src/qml/
+          cp -r ${./qml}/. src/qml/
+          cp -r ${./tests} src/tests
+          cd src
+          export HOME=$TMPDIR
+          export XDG_CACHE_HOME=$TMPDIR/cache
+          export QT_QPA_PLATFORM=offscreen
+          export QML2_IMPORT_PATH="${pkgs.qt6.qtdeclarative}/lib/qt-6/qml"
+          qmltestrunner -input tests
+          touch $out
+        '';
+
         clippy = pkgs.rustPlatform.buildRustPackage {
           pname = "qshell-clippy";
           version = "0.1.0";

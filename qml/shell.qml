@@ -256,6 +256,12 @@ ShellRoot {
         theme: shell.theme
     }
 
+    Switcher {
+        id: switcher
+
+        theme: shell.theme
+    }
+
     Notifications {
         theme: shell.theme
     }
@@ -266,12 +272,23 @@ ShellRoot {
             return;
         var target = parts[0];
         var verb = parts[1];
-        if (verb !== "toggle")
-            return;
-        if (target === "launcher")
+        if (target === "launcher" && verb === "toggle") {
+            switcher.close();
             launcher.toggle();
-        else if (target === "session")
+        } else if (target === "session" && verb === "toggle") {
+            switcher.close();
             sessionMenu.toggle();
+        } else if (target === "switcher") {
+            launcher.close();
+            if (verb === "next")
+                switcher.advance(1);
+            else if (verb === "prev")
+                switcher.advance(-1);
+            else if (verb === "commit")
+                switcher.commit(false);
+            else if (verb === "toggle")
+                switcher.toggle();
+        }
     }
 
     SocketServer {
@@ -298,6 +315,30 @@ ShellRoot {
 
         function toggle(): void {
             launcher.toggle();
+        }
+    }
+
+    IpcHandler {
+        target: "switcher"
+
+        function toggle(): void {
+            switcher.toggle();
+        }
+
+        function next(): void {
+            switcher.advance(1);
+        }
+
+        function prev(): void {
+            switcher.advance(-1);
+        }
+
+        function commit(): void {
+            switcher.commit(false);
+        }
+
+        function moveHere(): void {
+            switcher.commit(true);
         }
     }
 }

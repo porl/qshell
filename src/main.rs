@@ -10,7 +10,7 @@ use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
 use std::process::{Child, Command, Stdio};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use wayland_client::{
     globals::{registry_queue_init, GlobalListContents},
@@ -24,9 +24,62 @@ use wayland_protocols_hyprland::global_shortcuts::v1::client::{
 
 const APP_ID: &str = "qshell";
 
+/// A single Tab press released within this window is a tap: the switcher stays
+/// open for typing. A longer hold cycles and commits when SUPER is released.
+const SWITCHER_TAP: Duration = Duration::from_millis(300);
+/// A hold older than this lost its release (a compositor restart, a swallowed
+/// event); the next press starts a fresh one instead of committing.
+const SWITCHER_HOLD_MAX: Duration = Duration::from_secs(10);
+
+/// The SUPER+Tab hold: presses in, socket commands out. A Tab press bind reports
+/// only presses, so the lone-SUPER release bind is the only end-of-hold signal.
+struct SwitcherHold {
+    presses: u32,
+    since: Option<Instant>,
+}
+
+impl SwitcherHold {
+    fn new() -> Self {
+        Self {
+            presses: 0,
+            since: None,
+        }
+    }
+
+    /// A Tab press returns its walk command, keeping one command per press.
+    fn step(&mut self, command: &'static str, now: Instant) -> &'static str {
+        let stale = self
+            .since
+            .is_some_and(|since| now.duration_since(since) > SWITCHER_HOLD_MAX);
+        if self.presses == 0 || stale {
+            self.since = Some(now);
+            self.presses = 0;
+        }
+        self.presses += 1;
+        command
+    }
+
+    /// SUPER was released: normally that is the launcher, but during a hold it
+    /// commits the switcher instead. A single quick tap leaves the list open.
+    fn release(&mut self, now: Instant) -> Option<&'static str> {
+        let presses = std::mem::take(&mut self.presses);
+        let since = self.since.take();
+        if presses == 0 {
+            return Some("launcher toggle");
+        }
+        let tap =
+            presses == 1 && since.is_some_and(|started| now.duration_since(started) < SWITCHER_TAP);
+        if tap {
+            None
+        } else {
+            Some("switcher commit")
+        }
+    }
+}
+
 /// Which event fires a shortcut's command. Hyprland reports a press bind as
 /// `pressed` and a release bind as `released`.
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 enum Trigger {
     Pressed,
     Released,
@@ -34,23 +87,25 @@ enum Trigger {
 
 struct Binding {
     id: &'static str,
-    trigger: Trigger,
-    command: &'static str,
     description: &'static str,
 }
 
 const BINDINGS: &[Binding] = &[
     Binding {
         id: "launcher",
-        trigger: Trigger::Released,
-        command: "launcher toggle",
         description: "Toggle the application launcher",
     },
     Binding {
         id: "session",
-        trigger: Trigger::Pressed,
-        command: "session toggle",
         description: "Toggle the session menu",
+    },
+    Binding {
+        id: "switcher",
+        description: "Window switcher: next window",
+    },
+    Binding {
+        id: "switcher-prev",
+        description: "Window switcher: previous window",
     },
 ];
 
@@ -58,6 +113,30 @@ struct State {
     socket: String,
     // Kept alive for the connection's lifetime; dropping a shortcut destroys it.
     _shortcuts: Vec<HyprlandGlobalShortcutV1>,
+    hold: SwitcherHold,
+}
+
+impl State {
+    fn send(&self, command: &str) {
+        send(&self.socket, command);
+    }
+
+    fn shortcut(&mut self, id: &'static str, trigger: Trigger) {
+        let now = Instant::now();
+        let command = match (id, trigger) {
+            ("launcher", Trigger::Released) => self.hold.release(now),
+            ("session", Trigger::Pressed) => Some("session toggle"),
+            ("switcher", Trigger::Pressed) => Some(self.hold.step("switcher next", now)),
+            ("switcher-prev", Trigger::Pressed) => Some(self.hold.step("switcher prev", now)),
+            _ => None,
+        };
+        if let Some(command) = command {
+            eprintln!("qshell: {id} {trigger:?} -> {command}");
+            self.send(command);
+        } else if id == "launcher" {
+            eprintln!("qshell: {id} {trigger:?} -> (keep the list open)");
+        }
+    }
 }
 
 fn send(socket: &str, command: &str) {
@@ -110,9 +189,7 @@ impl Dispatch<HyprlandGlobalShortcutV1, usize> for State {
             hyprland_global_shortcut_v1::Event::Released { .. } => Trigger::Released,
             _ => return,
         };
-        if binding.trigger == trigger {
-            send(&state.socket, binding.command);
-        }
+        state.shortcut(binding.id, trigger);
     }
 }
 
@@ -191,6 +268,7 @@ fn wayland_loop(socket: String) {
     let mut state = State {
         socket,
         _shortcuts: shortcuts,
+        hold: SwitcherHold::new(),
     };
     if let Err(error) = queue.roundtrip(&mut state) {
         eprintln!("qshell: Wayland roundtrip failed: {error}");
@@ -225,5 +303,88 @@ fn main() {
         }
         thread::sleep(Duration::from_millis(750));
         child = spawn_shell(&qml, &socket);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fresh() -> SwitcherHold {
+        SwitcherHold::new()
+    }
+
+    #[test]
+    fn a_lone_super_release_toggles_the_launcher() {
+        assert_eq!(fresh().release(Instant::now()), Some("launcher toggle"));
+    }
+
+    #[test]
+    fn a_single_quick_tap_leaves_the_list_open() {
+        let mut hold = fresh();
+        let t0 = Instant::now();
+        assert_eq!(hold.step("switcher next", t0), "switcher next");
+        assert_eq!(hold.release(t0 + Duration::from_millis(120)), None);
+    }
+
+    #[test]
+    fn holding_commits_on_release() {
+        let mut hold = fresh();
+        let t0 = Instant::now();
+        hold.step("switcher next", t0);
+        assert_eq!(
+            hold.release(t0 + Duration::from_millis(800)),
+            Some("switcher commit")
+        );
+    }
+
+    #[test]
+    fn more_than_one_press_commits_even_when_quick() {
+        let mut hold = fresh();
+        let t0 = Instant::now();
+        hold.step("switcher next", t0);
+        hold.step("switcher next", t0 + Duration::from_millis(100));
+        assert_eq!(
+            hold.release(t0 + Duration::from_millis(150)),
+            Some("switcher commit")
+        );
+    }
+
+    #[test]
+    fn reverse_presses_walk_the_other_way_and_commit() {
+        let mut hold = fresh();
+        let t0 = Instant::now();
+        assert_eq!(hold.step("switcher prev", t0), "switcher prev");
+        assert_eq!(
+            hold.release(t0 + Duration::from_millis(500)),
+            Some("switcher commit")
+        );
+    }
+
+    #[test]
+    fn a_release_is_consumed() {
+        let mut hold = fresh();
+        let t0 = Instant::now();
+        hold.step("switcher next", t0);
+        assert_eq!(
+            hold.release(t0 + Duration::from_millis(500)),
+            Some("switcher commit")
+        );
+        // The next lone SUPER is the launcher again, not a second commit.
+        assert_eq!(
+            hold.release(t0 + Duration::from_secs(1)),
+            Some("launcher toggle")
+        );
+    }
+
+    #[test]
+    fn a_stale_hold_starts_fresh() {
+        let mut hold = fresh();
+        let t0 = Instant::now();
+        hold.step("switcher next", t0);
+        // The release was lost; the next press must not commit against it.
+        let t1 = t0 + SWITCHER_HOLD_MAX + Duration::from_secs(1);
+        assert_eq!(hold.step("switcher next", t1), "switcher next");
+        assert_eq!(hold.release(t1 + Duration::from_millis(120)), None);
     }
 }
