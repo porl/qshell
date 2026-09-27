@@ -177,13 +177,36 @@ launcher's own bind stays shadowable, so a `SUPER+<key>` combo still never opens
 the launcher, while the transparent twin still reports SUPER's release when a
 Tab press has shadowed the launcher bind.
 
-## Calendar (TODO)
+## Calendar
 
-The drop-down calendar is Phase 1+2 (grid + open-app). **Phase 3, not built: an
-agenda for the selected day.** Intended shape — a configurable command
-(`QSHELL_CALENDAR_AGENDA`, e.g. `khal list {start} {end}` or `gcalcli agenda …`)
-whose output is rendered under the grid, rather than parsing `.ics`/`RRULE` in
-QML. No agenda section unless the command is configured.
+The clock opens a drop-down calendar: a month grid with prev/next month and
+year navigation. Click a day to select it; click the selected day again, or
+double-click, to open `QSHELL_CALENDAR` for that date (`{date}` in the template
+is replaced with the ISO date, apps that ignore the argument simply open as
+usual). While the card is open the arrow keys walk the days (`Up`/`Down` a
+week, crossing month and year boundaries), `Enter` opens the app for the
+selected day and `Escape` closes the card. `QSHELL_WEEK_START` picks Mon/Sun.
+
+Two optional commands feed the rest, both shell templates run through `sh -c`
+with `{date}`/`{start}` substituted with the range's first day and `{end}` with
+the day after its last:
+
+- `QSHELL_CALENDAR_AGENDA` — the selected day's agenda, rendered under the grid
+  in the tool's own layout (ANSI stripped, blank runs collapsed) and scrolled
+  past about six lines. Empty output reads "No events"; a non-zero exit reads
+  "Agenda unavailable". Examples: `khal list {start} {end}`,
+  `gcalcli agenda {start} {end}`.
+- `QSHELL_CALENDAR_DAYS` — one day per line, the line's first token the ISO
+  date, e.g. `2026-09-27 Standup`; each such day gets a dot on the grid. Lines
+  that do not start with a date (headings, warnings) are ignored. Example:
+  `khal list --format "{start-date} {title}" {start} {end}`.
+
+Both commands are re-run when the popout opens, when the selection changes and
+when the month changes; `QSHELL_CALENDAR_REFRESH` (seconds, default 300) also
+polls while the card is open so external changes appear without reopening, and
+`0` turns polling off. The card keeps the last output while a query runs. With
+neither command set there is no agenda section and no dots — the greeter sets
+neither, so the login screen's calendar is just the grid.
 
 ## Command socket
 
