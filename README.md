@@ -190,7 +190,7 @@ selected day and `Escape` closes the card. `QSHELL_WEEK_START` picks Mon/Sun.
 The grid also carries ISO 8601 week numbers down its left, one per row — the
 week the row mostly covers, so a Monday-start row is labelled with exactly its
 ISO week. They are on by default: `QSHELL_CALENDAR_WEEK_NUMBERS=off` hides them
-and `QSHELL_CALENDAR_WEEK_FORMAT` (default `w{week}`) sets the label, e.g.
+and `QSHELL_CALENDAR_WEEK_FORMAT` (default `W{week}`) sets the label, e.g.
 `{week}` for bare numbers.
 
 Two optional commands feed the rest, both shell templates run through `sh -c`
