@@ -31,8 +31,10 @@ const SWITCHER_TAP: Duration = Duration::from_millis(300);
 /// event); the next press starts a fresh one instead of committing.
 const SWITCHER_HOLD_MAX: Duration = Duration::from_secs(10);
 
-/// The SUPER+Tab hold: presses in, socket commands out. A Tab press bind reports
-/// only presses, so the lone-SUPER release bind is the only end-of-hold signal.
+/// The SUPER+Tab hold: presses in, socket commands out. The Tab press bind
+/// reports only presses, so the end of the hold arrives on the transparent
+/// `qshell:super-release` twin bind — the lone-SUPER launcher bind is shadowed
+/// once Tab is consumed and would never fire here.
 struct SwitcherHold {
     presses: u32,
     since: Option<Instant>,
@@ -59,13 +61,15 @@ impl SwitcherHold {
         command
     }
 
-    /// SUPER was released: normally that is the launcher, but during a hold it
-    /// commits the switcher instead. A single quick tap leaves the list open.
+    /// SUPER was released: end a switcher hold. A single quick tap leaves the
+    /// list open for typing; anything longer commits. With no hold this does
+    /// nothing — the launcher toggle is the launcher bind's business, and the
+    /// compositor only fires that one for a genuine lone SUPER.
     fn release(&mut self, now: Instant) -> Option<&'static str> {
         let presses = std::mem::take(&mut self.presses);
         let since = self.since.take();
         if presses == 0 {
-            return Some("launcher toggle");
+            return None;
         }
         let tap =
             presses == 1 && since.is_some_and(|started| now.duration_since(started) < SWITCHER_TAP);
@@ -96,6 +100,10 @@ const BINDINGS: &[Binding] = &[
         description: "Toggle the application launcher",
     },
     Binding {
+        id: "super-release",
+        description: "SUPER was released (ends a switcher hold)",
+    },
+    Binding {
         id: "session",
         description: "Toggle the session menu",
     },
@@ -124,7 +132,8 @@ impl State {
     fn shortcut(&mut self, id: &'static str, trigger: Trigger) {
         let now = Instant::now();
         let command = match (id, trigger) {
-            ("launcher", Trigger::Released) => self.hold.release(now),
+            ("launcher", Trigger::Released) => Some("launcher toggle"),
+            ("super-release", Trigger::Released) => self.hold.release(now),
             ("session", Trigger::Pressed) => Some("session toggle"),
             ("switcher", Trigger::Pressed) => Some(self.hold.step("switcher next", now)),
             ("switcher-prev", Trigger::Pressed) => Some(self.hold.step("switcher prev", now)),
@@ -133,8 +142,8 @@ impl State {
         if let Some(command) = command {
             eprintln!("qshell: {id} {trigger:?} -> {command}");
             self.send(command);
-        } else if id == "launcher" {
-            eprintln!("qshell: {id} {trigger:?} -> (keep the list open)");
+        } else if id == "super-release" {
+            eprintln!("qshell: {id} {trigger:?} -> (no hold)");
         }
     }
 }
@@ -315,8 +324,10 @@ mod tests {
     }
 
     #[test]
-    fn a_lone_super_release_toggles_the_launcher() {
-        assert_eq!(fresh().release(Instant::now()), Some("launcher toggle"));
+    fn a_release_without_a_hold_does_nothing() {
+        // A lone SUPER release is the launcher bind's business; this signal is
+        // only the switcher hold's end.
+        assert_eq!(fresh().release(Instant::now()), None);
     }
 
     #[test]
@@ -370,11 +381,9 @@ mod tests {
             hold.release(t0 + Duration::from_millis(500)),
             Some("switcher commit")
         );
-        // The next lone SUPER is the launcher again, not a second commit.
-        assert_eq!(
-            hold.release(t0 + Duration::from_secs(1)),
-            Some("launcher toggle")
-        );
+        // The release is consumed: the next SUPER release does not commit
+        // again (and a lone SUPER is the launcher bind's business).
+        assert_eq!(hold.release(t0 + Duration::from_secs(1)), None);
     }
 
     #[test]
