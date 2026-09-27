@@ -193,6 +193,17 @@ apps. It needs system `python3` with `dbus-python` and `PyGObject` (GLib):
 python3 scripts/fake-tray-items.py 30   # register 30; ^C to remove
 ```
 
+Items selected by `--menus` also serve a `com.canonical.dbusmenu` tree (a
+submenu with a nested submenu inside it, a checkable row, a disabled row and a
+separator), so the menus, cascade and tooltips can be driven without real
+apps; `--menu-only` makes the left click open the menu instead of activating,
+and every call an item receives is printed. `--menus` takes `none` (default),
+`all`, or 1-based indices/ranges like `1,3,5-7`:
+
+```
+python3 scripts/fake-tray-items.py 8 --menus all --menu-only 1
+```
+
 To force the overflow path without that many items, lower the cap:
 `QSHELL_TRAY_MAX_VISIBLE=2` on the qshell unit.
 
